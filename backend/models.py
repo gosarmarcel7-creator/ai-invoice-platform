@@ -11,6 +11,7 @@ class Invoice(Base):
     filename = Column(String, index=True)
     status = Column(String, default="processing")  # processing | review | approved | rejected
     uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
+    user_id = Column(String, nullable=True, index=True)
 
     vendor_name = Column(String, nullable=True)
     invoice_number = Column(String, nullable=True)

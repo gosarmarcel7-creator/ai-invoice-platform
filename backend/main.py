@@ -1,7 +1,9 @@
 import math
+import os
+from datetime import datetime, timedelta, date
 from typing import Optional
 
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, BackgroundTasks, Query
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, BackgroundTasks, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import or_, func
 from sqlalchemy.orm import Session
@@ -16,6 +18,29 @@ try:
     HAS_PDFPLUMBER = True
 except ImportError:
     HAS_PDFPLUMBER = False
+
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+
+
+def get_current_user_id(request: Request) -> Optional[str]:
+    """Returns the Supabase user UUID from the Bearer token, or None if auth is not configured."""
+    if not SUPABASE_JWT_SECRET:
+        return None
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = auth[7:]
+    try:
+        import jwt as pyjwt
+        payload = pyjwt.decode(
+            token, SUPABASE_JWT_SECRET,
+            algorithms=["HS256"],
+            audience="authenticated",
+        )
+        return payload.get("sub")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -82,14 +107,16 @@ def health():
 
 @app.post("/api/invoices/", response_model=schemas.InvoiceListItem)
 async def upload_invoice(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(database.get_db),
 ):
+    user_id = get_current_user_id(request)
     content = await file.read()
     text = _extract_text(content, file.filename or "upload")
 
-    inv = models.Invoice(filename=file.filename, raw_text=text)
+    inv = models.Invoice(filename=file.filename, raw_text=text, user_id=user_id)
     db.add(inv)
     db.commit()
     db.refresh(inv)
@@ -201,4 +228,61 @@ def get_analytics(db: Session = Depends(database.get_db)):
         "rejected": by_status.get("rejected", 0),
         "total_value": round(float(total_value), 2),
         "avg_confidence": round(float(avg_conf) * 100, 1) if avg_conf else 0,
+    }
+
+
+@app.get("/api/analytics/timeseries")
+def get_timeseries(db: Session = Depends(database.get_db)):
+    today = date.today()
+    year_start = datetime(today.year, 1, 1)
+
+    invoices = (
+        db.query(models.Invoice.uploaded_at, models.Invoice.status, models.Invoice.total_amount)
+        .filter(models.Invoice.uploaded_at >= year_start)
+        .all()
+    )
+
+    # Build weekly map (last 7 days)
+    weekly_map: dict = {}
+    for i in range(6, -1, -1):
+        d = today - timedelta(days=i)
+        weekly_map[d.isoformat()] = {
+            "day": d.strftime("%a"),
+            "date": d.isoformat(),
+            "total": 0,
+            "approved": 0,
+            "rejected": 0,
+        }
+
+    # Build monthly map (current year, months up to today)
+    month_names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    monthly_map: dict = {}
+    for m in range(1, today.month + 1):
+        monthly_map[m] = {"month": month_names[m - 1], "total": 0, "value": 0.0}
+
+    for inv in invoices:
+        if inv.uploaded_at is None:
+            continue
+        inv_date = inv.uploaded_at.date() if hasattr(inv.uploaded_at, "date") else inv.uploaded_at
+        ds = inv_date.isoformat()
+
+        if ds in weekly_map:
+            weekly_map[ds]["total"] += 1
+            if inv.status == "approved":
+                weekly_map[ds]["approved"] += 1
+            elif inv.status == "rejected":
+                weekly_map[ds]["rejected"] += 1
+
+        month_num = inv_date.month
+        if month_num in monthly_map:
+            monthly_map[month_num]["total"] += 1
+            if inv.status == "approved" and inv.total_amount:
+                monthly_map[month_num]["value"] += float(inv.total_amount)
+
+    return {
+        "weekly": list(weekly_map.values()),
+        "monthly": [
+            {**v, "value": round(v["value"], 2)}
+            for v in monthly_map.values()
+        ],
     }

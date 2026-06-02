@@ -9,7 +9,7 @@ import {
   RefreshCw, TrendingUp, CheckCircle2, XCircle,
   Clock, DollarSign, FileText, Percent,
 } from "lucide-react";
-import { api, type Analytics } from "@/lib/api";
+import { api, type Analytics, type Timeseries } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 
 function Skeleton({ className = "" }: { className?: string }) {
@@ -56,28 +56,6 @@ function ChartTip({ active, payload, label }: any) {
   );
 }
 
-const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const BASE = [4, 7, 5, 9, 12, 3, 6];
-
-function buildWeekly(approved: number, review: number, processing: number) {
-  const total = approved + review + processing + 8;
-  return WEEK_DAYS.map((day, i) => ({
-    day,
-    processed: BASE[i] + Math.round((total * BASE[i]) / 46),
-    approved:  Math.round((approved  * BASE[i]) / 46),
-    rejected:  Math.round((Math.max(1, total * 0.08) * BASE[i]) / 46),
-  }));
-}
-
-function buildMonthly(approved: number, total: number) {
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const now = new Date().getMonth();
-  return months.slice(0, now + 1).map((m, i) => ({
-    month: m,
-    volume: Math.round(total * (0.05 + (i / (now + 1)) * 0.12)),
-    value:  Math.round(approved * 1200 * (0.05 + (i / (now + 1)) * 0.15)),
-  }));
-}
 
 const STATUS_COLORS: Record<string, string> = {
   approved:   "#16a34a",
@@ -88,14 +66,19 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [timeseries, setTimeseries] = useState<Timeseries | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); else setRefreshing(true);
     try {
-      const res = await api.get<Analytics>("/api/analytics");
-      setAnalytics(res.data);
+      const [aRes, tRes] = await Promise.all([
+        api.get<Analytics>("/api/analytics"),
+        api.get<Timeseries>("/api/analytics/timeseries"),
+      ]);
+      setAnalytics(aRes.data);
+      setTimeseries(tRes.data);
     } catch { /* backend may be offline */ }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
@@ -107,8 +90,12 @@ export default function AnalyticsPage() {
     approved: 0, rejected: 0, total_value: 0, avg_confidence: 0,
   };
 
-  const weeklyData  = buildWeekly(a.approved, a.awaiting_review, a.processing);
-  const monthlyData = buildMonthly(a.approved, a.total_documents);
+  const weeklyData  = (timeseries?.weekly ?? []).map((d) => ({
+    day: d.day, processed: d.total, approved: d.approved, rejected: d.rejected,
+  }));
+  const monthlyData = (timeseries?.monthly ?? []).map((d) => ({
+    month: d.month, volume: d.total, value: d.value,
+  }));
 
   const statusBreakdown = [
     { name: "Approved",   value: a.approved,        color: STATUS_COLORS.approved },

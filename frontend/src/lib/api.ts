@@ -4,6 +4,25 @@ export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
 });
 
+// Attach Supabase session token to every request when auth is configured
+if (
+  typeof window !== "undefined" &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+) {
+  api.interceptors.request.use(async (config) => {
+    try {
+      const { createClient } = await import("./supabase/client");
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        config.headers.Authorization = `Bearer ${session.access_token}`;
+      }
+    } catch {}
+    return config;
+  });
+}
+
 export interface LineItem {
   id?: number;
   invoice_id?: number;
@@ -37,6 +56,11 @@ export interface Analytics {
   rejected: number;
   total_value: number;
   avg_confidence: number;
+}
+
+export interface Timeseries {
+  weekly: { day: string; date: string; total: number; approved: number; rejected: number }[];
+  monthly: { month: string; total: number; value: number }[];
 }
 
 export interface PaginatedInvoices {
