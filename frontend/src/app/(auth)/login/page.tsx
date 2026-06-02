@@ -44,7 +44,6 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-sm">
-      {/* Logo */}
       <div className="flex flex-col items-center mb-8">
         <div className="w-10 h-10 rounded-xl bg-stone-900 flex items-center justify-center mb-3">
           <Layers className="w-5 h-5 text-white" />
@@ -53,12 +52,12 @@ export default function LoginPage() {
         <p className="text-sm text-stone-400 mt-0.5">AI-powered invoice processing</p>
       </div>
 
-      {/* Card */}
       <div className="card p-6">
         <div className="flex gap-1 p-1 bg-stone-100 rounded-lg mb-6">
           {(["signin", "signup"] as const).map((m) => (
             <button
               key={m}
+              type="button"
               onClick={() => { setMode(m); setError(null); setSuccess(null); }}
               className={`flex-1 py-1.5 rounded-md text-sm font-semibold transition-all ${
                 mode === m
@@ -94,10 +93,10 @@ export default function LoginPage() {
               <input
                 type={showPw ? "text" : "password"}
                 required
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                minLength={6}
                 className="field-input pr-10"
               />
               <button
@@ -127,7 +126,8 @@ export default function LoginPage() {
             className="btn btn-primary w-full justify-center disabled:opacity-50"
           >
             {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> {mode === "signin" ? "Signing in…" : "Creating account…"}</>
+              <><Loader2 className="w-4 h-4 animate-spin" />
+                {mode === "signin" ? "Signing in…" : "Creating account…"}</>
             ) : (
               mode === "signin" ? "Sign in" : "Create account"
             )}
@@ -136,8 +136,14 @@ export default function LoginPage() {
       </div>
 
       <p className="text-center text-xs text-stone-400 mt-4">
-        By continuing you agree to our{" "}
-        <span className="text-stone-600 hover:text-stone-900 cursor-pointer">Terms of Service</span>
+        {mode === "signin" ? "Don't have an account? " : "Already have an account? "}
+        <button
+          type="button"
+          onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(null); }}
+          className="text-stone-700 font-semibold hover:text-stone-900"
+        >
+          {mode === "signin" ? "Sign up" : "Sign in"}
+        </button>
       </p>
     </div>
   );

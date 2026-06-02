@@ -21,9 +21,28 @@ except ImportError:
 
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 
+models.Base.metadata.create_all(bind=database.engine)
+
+app = FastAPI(title="DocuExtract AI API", version="3.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "https://docuextract.xyz",
+        "https://www.docuextract.xyz",
+        "https://*.vercel.app",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
 
 def get_current_user_id(request: Request) -> Optional[str]:
-    """Returns the Supabase user UUID from the Bearer token, or None if auth is not configured."""
+    """Returns Supabase user UUID from Bearer token. Returns None if JWT secret not configured."""
     if not SUPABASE_JWT_SECRET:
         return None
     auth = request.headers.get("Authorization", "")
@@ -31,29 +50,27 @@ def get_current_user_id(request: Request) -> Optional[str]:
         raise HTTPException(status_code=401, detail="Not authenticated")
     token = auth[7:]
     try:
-        import jwt as pyjwt
-        payload = pyjwt.decode(
-            token, SUPABASE_JWT_SECRET,
+        import jwt
+        payload = jwt.decode(
+            token,
+            SUPABASE_JWT_SECRET,
             algorithms=["HS256"],
             audience="authenticated",
         )
         return payload.get("sub")
     except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
-models.Base.metadata.create_all(bind=database.engine)
+def require_user(request: Request) -> str:
+    """Like get_current_user_id but raises 401 if not authenticated."""
+    user_id = get_current_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user_id
 
-app = FastAPI(title="DocuExtract AI API", version="2.0.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+# ── Utilities ─────────────────────────────────────────────────────────────────
 
 def _extract_text(content: bytes, filename: str) -> str:
     if filename.lower().endswith(".pdf") and HAS_PDFPLUMBER:
@@ -67,7 +84,6 @@ def _extract_text(content: bytes, filename: str) -> str:
 
 
 def _process_in_background(invoice_id: int, text: str) -> None:
-    """Creates its own DB session — safe to run as a background task."""
     db = database.SessionLocal()
     try:
         extracted = extract_invoice_data(text)
@@ -100,7 +116,7 @@ def _process_in_background(invoice_id: int, text: str) -> None:
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": "2.0.0"}
+    return {"status": "ok", "version": "3.0.0"}
 
 
 # ── Invoices ──────────────────────────────────────────────────────────────────
@@ -115,25 +131,27 @@ async def upload_invoice(
     user_id = get_current_user_id(request)
     content = await file.read()
     text = _extract_text(content, file.filename or "upload")
-
     inv = models.Invoice(filename=file.filename, raw_text=text, user_id=user_id)
     db.add(inv)
     db.commit()
     db.refresh(inv)
-
     background_tasks.add_task(_process_in_background, inv.id, text)
     return inv
 
 
 @app.get("/api/invoices/", response_model=schemas.PaginatedInvoices)
 def list_invoices(
+    request: Request,
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     status: Optional[str] = None,
     search: Optional[str] = None,
     db: Session = Depends(database.get_db),
 ):
+    user_id = get_current_user_id(request)
     q = db.query(models.Invoice)
+    if user_id:
+        q = q.filter(models.Invoice.user_id == user_id)
     if status and status != "all":
         q = q.filter(models.Invoice.status == status)
     if search:
@@ -150,18 +168,21 @@ def list_invoices(
         .limit(limit)
         .all()
     )
-    return {
-        "items": items,
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "pages": max(1, math.ceil(total / limit)),
-    }
+    return {"items": items, "total": total, "page": page, "limit": limit,
+            "pages": max(1, math.ceil(total / limit))}
 
 
 @app.get("/api/invoices/{invoice_id}", response_model=schemas.Invoice)
-def get_invoice(invoice_id: int, db: Session = Depends(database.get_db)):
-    inv = db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()
+def get_invoice(
+    request: Request,
+    invoice_id: int,
+    db: Session = Depends(database.get_db),
+):
+    user_id = get_current_user_id(request)
+    q = db.query(models.Invoice).filter(models.Invoice.id == invoice_id)
+    if user_id:
+        q = q.filter(models.Invoice.user_id == user_id)
+    inv = q.first()
     if not inv:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return inv
@@ -169,11 +190,16 @@ def get_invoice(invoice_id: int, db: Session = Depends(database.get_db)):
 
 @app.put("/api/invoices/{invoice_id}", response_model=schemas.Invoice)
 def update_invoice(
+    request: Request,
     invoice_id: int,
     update: schemas.InvoiceUpdate,
     db: Session = Depends(database.get_db),
 ):
-    inv = db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()
+    user_id = get_current_user_id(request)
+    q = db.query(models.Invoice).filter(models.Invoice.id == invoice_id)
+    if user_id:
+        q = q.filter(models.Invoice.user_id == user_id)
+    inv = q.first()
     if not inv:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
@@ -199,8 +225,16 @@ def update_invoice(
 
 
 @app.delete("/api/invoices/{invoice_id}", status_code=204)
-def delete_invoice(invoice_id: int, db: Session = Depends(database.get_db)):
-    inv = db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()
+def delete_invoice(
+    request: Request,
+    invoice_id: int,
+    db: Session = Depends(database.get_db),
+):
+    user_id = get_current_user_id(request)
+    q = db.query(models.Invoice).filter(models.Invoice.id == invoice_id)
+    if user_id:
+        q = q.filter(models.Invoice.user_id == user_id)
+    inv = q.first()
     if not inv:
         raise HTTPException(status_code=404, detail="Invoice not found")
     db.delete(inv)
@@ -210,15 +244,22 @@ def delete_invoice(invoice_id: int, db: Session = Depends(database.get_db)):
 # ── Analytics ─────────────────────────────────────────────────────────────────
 
 @app.get("/api/analytics")
-def get_analytics(db: Session = Depends(database.get_db)):
-    total = db.query(models.Invoice).count()
+def get_analytics(
+    request: Request,
+    db: Session = Depends(database.get_db),
+):
+    user_id = get_current_user_id(request)
+    q = db.query(models.Invoice)
+    if user_id:
+        q = q.filter(models.Invoice.user_id == user_id)
+
+    total = q.count()
     by_status = dict(
-        db.query(models.Invoice.status, func.count(models.Invoice.id))
-        .group_by(models.Invoice.status)
-        .all()
+        q.with_entities(models.Invoice.status, func.count(models.Invoice.id))
+        .group_by(models.Invoice.status).all()
     )
-    total_value = db.query(func.sum(models.Invoice.total_amount)).scalar() or 0
-    avg_conf = db.query(func.avg(models.Invoice.confidence_score)).scalar() or 0
+    total_value = q.with_entities(func.sum(models.Invoice.total_amount)).scalar() or 0
+    avg_conf = q.with_entities(func.avg(models.Invoice.confidence_score)).scalar() or 0
 
     return {
         "total_documents": total,
@@ -232,29 +273,27 @@ def get_analytics(db: Session = Depends(database.get_db)):
 
 
 @app.get("/api/analytics/timeseries")
-def get_timeseries(db: Session = Depends(database.get_db)):
+def get_timeseries(
+    request: Request,
+    db: Session = Depends(database.get_db),
+):
+    user_id = get_current_user_id(request)
     today = date.today()
     year_start = datetime(today.year, 1, 1)
 
-    invoices = (
-        db.query(models.Invoice.uploaded_at, models.Invoice.status, models.Invoice.total_amount)
-        .filter(models.Invoice.uploaded_at >= year_start)
-        .all()
+    q = db.query(models.Invoice.uploaded_at, models.Invoice.status, models.Invoice.total_amount).filter(
+        models.Invoice.uploaded_at >= year_start
     )
+    if user_id:
+        q = q.filter(models.Invoice.user_id == user_id)
+    invoices = q.all()
 
-    # Build weekly map (last 7 days)
     weekly_map: dict = {}
     for i in range(6, -1, -1):
         d = today - timedelta(days=i)
-        weekly_map[d.isoformat()] = {
-            "day": d.strftime("%a"),
-            "date": d.isoformat(),
-            "total": 0,
-            "approved": 0,
-            "rejected": 0,
-        }
+        weekly_map[d.isoformat()] = {"day": d.strftime("%a"), "date": d.isoformat(),
+                                      "total": 0, "approved": 0, "rejected": 0}
 
-    # Build monthly map (current year, months up to today)
     month_names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     monthly_map: dict = {}
     for m in range(1, today.month + 1):
@@ -265,14 +304,12 @@ def get_timeseries(db: Session = Depends(database.get_db)):
             continue
         inv_date = inv.uploaded_at.date() if hasattr(inv.uploaded_at, "date") else inv.uploaded_at
         ds = inv_date.isoformat()
-
         if ds in weekly_map:
             weekly_map[ds]["total"] += 1
             if inv.status == "approved":
                 weekly_map[ds]["approved"] += 1
             elif inv.status == "rejected":
                 weekly_map[ds]["rejected"] += 1
-
         month_num = inv_date.month
         if month_num in monthly_map:
             monthly_map[month_num]["total"] += 1
@@ -281,8 +318,5 @@ def get_timeseries(db: Session = Depends(database.get_db)):
 
     return {
         "weekly": list(weekly_map.values()),
-        "monthly": [
-            {**v, "value": round(v["value"], 2)}
-            for v in monthly_map.values()
-        ],
+        "monthly": [{**v, "value": round(v["value"], 2)} for v in monthly_map.values()],
     }

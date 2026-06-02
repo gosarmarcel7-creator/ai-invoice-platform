@@ -5,7 +5,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export async function middleware(request: NextRequest) {
-  // If Supabase is not configured, allow all requests through
+  // Pass through if Supabase is not yet configured
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return NextResponse.next({ request });
   }
@@ -25,7 +25,6 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Refresh session if expired
   const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;

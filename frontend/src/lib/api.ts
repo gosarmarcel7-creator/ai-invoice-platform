@@ -4,13 +4,13 @@ export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
 });
 
-// Attach Supabase session token to every request when auth is configured
-if (
-  typeof window !== "undefined" &&
-  process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-) {
-  api.interceptors.request.use(async (config) => {
+// Attach Supabase session token to every request
+api.interceptors.request.use(async (config) => {
+  if (
+    typeof window !== "undefined" &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
     try {
       const { createClient } = await import("./supabase/client");
       const supabase = createClient();
@@ -19,9 +19,9 @@ if (
         config.headers.Authorization = `Bearer ${session.access_token}`;
       }
     } catch {}
-    return config;
-  });
-}
+  }
+  return config;
+});
 
 export interface LineItem {
   id?: number;
