@@ -1,0 +1,10 @@
+{
+  "experimentalServices": {
+    "docuextract-api": {
+      "type": "web",
+      "root": "backend",
+      "entrypoint": "main:app",
+      "routePrefix": "/"
+    }
+  }
+}
