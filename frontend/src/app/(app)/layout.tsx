@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Upload, ClipboardList,
-  BarChart3, Settings, Layers, LogOut,
+  BarChart3, Settings, Sparkles, LogOut,
 } from "lucide-react";
 
 const navLinks = [
@@ -50,19 +50,19 @@ function Sidebar() {
   };
 
   return (
-    <aside className="sidebar-bg w-52 shrink-0 flex flex-col h-screen sticky top-0">
+    <aside className="sidebar-bg sticky top-0 flex h-screen w-56 shrink-0 flex-col">
       {/* Logo */}
-      <div className="h-14 flex items-center px-4 border-b border-stone-200/70">
+      <div className="flex h-16 items-center border-b border-[var(--border)] px-4">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-stone-900 flex items-center justify-center">
-            <Layers className="w-3.5 h-3.5 text-white" />
+          <div className="relative grid h-8 w-8 place-items-center rounded-xl bg-[var(--grad)] shadow-[0_0_18px_-2px_rgba(124,108,255,0.8)]">
+            <Sparkles className="h-4 w-4 text-white" />
           </div>
-          <span className="font-bold text-stone-900 text-sm tracking-tight">DocuExtract</span>
+          <span className="font-[var(--font-display)] text-[15px] font-bold tracking-tight text-white">DocuExtract</span>
         </Link>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-px overflow-y-auto">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {navLinks.map((link) => {
           const isActive =
             pathname === link.href ||
@@ -73,7 +73,7 @@ function Sidebar() {
               href={link.href}
               className={cn("nav-link", isActive && "nav-link-active")}
             >
-              <link.icon className={cn("w-4 h-4 shrink-0", isActive ? "text-stone-900" : "text-stone-400")} />
+              <link.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-white" : "text-[var(--text-3)]")} />
               <span className="flex-1 truncate">{link.label}</span>
             </Link>
           );
@@ -81,16 +81,16 @@ function Sidebar() {
       </nav>
 
       {/* User */}
-      <div className="p-3 border-t border-stone-200/70">
-        <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg group">
-          <div className="w-7 h-7 rounded-full bg-stone-900 flex items-center justify-center shrink-0">
+      <div className="border-t border-[var(--border)] p-3">
+        <div className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--grad)]">
             <span className="text-xs font-black text-white">{userInitial}</span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-stone-800 truncate leading-none">
+            <p className="truncate text-xs font-semibold leading-none text-white">
               {userEmail ? userEmail.split("@")[0] : "Admin"}
             </p>
-            <p className="text-[11px] text-stone-400 mt-0.5 truncate">
+            <p className="mt-0.5 truncate text-[11px] text-[var(--text-3)]">
               {userEmail ?? "Enterprise Plan"}
             </p>
           </div>
@@ -98,9 +98,9 @@ function Sidebar() {
             <button
               onClick={handleLogout}
               title="Sign out"
-              className="shrink-0 p-1 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition-colors"
+              className="shrink-0 rounded-lg p-1 text-[var(--text-3)] transition-colors hover:bg-white/5 hover:text-white"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
@@ -111,10 +111,10 @@ function Sidebar() {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-[#f5f4f2]">
+    <div className="flex min-h-screen">
       <Sidebar />
-      <main className="flex-1 overflow-auto min-w-0">
-        <div className="p-7 w-full">{children}</div>
+      <main className="min-w-0 flex-1 overflow-auto">
+        <div className="w-full p-7">{children}</div>
       </main>
     </div>
   );

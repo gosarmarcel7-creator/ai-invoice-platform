@@ -5,8 +5,10 @@ import { extractInvoiceData } from "@/lib/mistral";
 async function extractText(buffer: Buffer, filename: string): Promise<string> {
   if (filename.toLowerCase().endsWith(".pdf")) {
     try {
-      const pdfParse = (await import("pdf-parse")).default;
-      const data = await pdfParse(buffer);
+      const { PDFParse } = await import("pdf-parse");
+      const parser = new PDFParse({ data: new Uint8Array(buffer) });
+      const data = await parser.getText();
+      await parser.destroy();
       return data.text;
     } catch {}
   }

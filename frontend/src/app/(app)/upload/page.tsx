@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
   UploadCloud, X, CheckCircle2, AlertCircle,
-  ArrowRight, Loader2, FileText, File,
+  ArrowRight, Loader2,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -86,22 +86,23 @@ export default function UploadPage() {
     <div className="w-full space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-black text-stone-900">Upload Invoices</h1>
-        <p className="text-sm text-stone-400 mt-0.5">Upload any invoice format. AI extracts all key data automatically.</p>
+        <h1 className="font-[var(--font-display)] text-2xl font-bold tracking-tight text-white">Upload Invoices</h1>
+        <p className="mt-0.5 text-sm text-[var(--text-3)]">Upload any invoice format. AI extracts all key data automatically.</p>
       </div>
 
-      {/* Main 2-col layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {/* Left: drop zone + queue */}
-        <div className="xl:col-span-2 space-y-4">
+        <div className="space-y-4 xl:col-span-2">
           {/* Drop zone */}
           <div
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={(e) => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
             onClick={() => ref.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-16 text-center cursor-pointer transition-all duration-150 ${
-              dragging ? "border-stone-400 bg-stone-100" : "border-stone-200 hover:border-stone-300 hover:bg-stone-50/50"
+            className={`relative cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed p-16 text-center transition-all duration-200 ${
+              dragging
+                ? "border-[var(--accent)] bg-[var(--accent)]/10 shadow-[0_0_40px_-10px_rgba(124,108,255,0.6)]"
+                : "border-[var(--border-2)] bg-white/[0.02] hover:border-[var(--accent)]/60 hover:bg-white/[0.04]"
             }`}
           >
             <input
@@ -113,20 +114,18 @@ export default function UploadPage() {
               onChange={(e) => e.target.files && add(e.target.files)}
             />
             <div className="flex flex-col items-center gap-3">
-              <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all ${
-                dragging ? "bg-stone-200" : "bg-stone-100"
-              }`}>
-                <UploadCloud className={`w-7 h-7 ${dragging ? "text-stone-700" : "text-stone-400"}`} />
+              <div className={`grid h-16 w-16 place-items-center rounded-2xl transition-all ${dragging ? "bg-[var(--grad)] scale-110" : "border border-[var(--border)] bg-[var(--grad-soft)]"} ${dragging ? "" : "float-y"}`}>
+                <UploadCloud className="h-7 w-7 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-stone-700">
+                <p className="text-sm font-semibold text-white">
                   {dragging ? "Drop files to upload" : "Drag & drop invoices here"}
                 </p>
-                <p className="text-sm text-stone-400 mt-1">
-                  or <span className="text-stone-700 font-semibold underline underline-offset-2">browse</span> to choose files
+                <p className="mt-1 text-sm text-[var(--text-3)]">
+                  or <span className="font-semibold text-[var(--violet)] underline underline-offset-2">browse</span> to choose files
                 </p>
               </div>
-              <p className="text-xs text-stone-400">PDF, TXT, PNG, JPG — up to 20 MB each</p>
+              <p className="text-xs text-[var(--text-4)]">PDF, TXT, PNG, JPG — up to 20 MB each</p>
             </div>
           </div>
 
@@ -134,80 +133,70 @@ export default function UploadPage() {
           <AnimatePresence>
             {queue.length > 0 && (
               <motion.div
-                initial={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 className="card overflow-hidden"
               >
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-100">
-                  <p className="text-sm font-bold text-stone-800">
+                <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
+                  <p className="text-sm font-bold text-white">
                     {queue.length} file{queue.length !== 1 ? "s" : ""} selected
                   </p>
                   {!uploading && !allDone && (
-                    <button
-                      onClick={() => setQueue([])}
-                      className="text-xs text-stone-400 hover:text-red-600 transition-colors"
-                    >
+                    <button onClick={() => setQueue([])} className="text-xs text-[var(--text-3)] transition-colors hover:text-rose-400">
                       Clear all
                     </button>
                   )}
                 </div>
 
-                <ul className="max-h-64 overflow-y-auto divide-y divide-stone-50">
+                <ul className="max-h-64 divide-y divide-white/5 overflow-y-auto">
                   {queue.map((item) => (
                     <motion.li
                       key={item.id}
-                      initial={{ opacity: 0, x: -4 }}
+                      initial={{ opacity: 0, x: -6 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0 }}
-                      className="flex items-center gap-3 px-5 py-3 group"
+                      className="group flex items-center gap-3 px-5 py-3"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
-                        <span className="text-[10px] font-black text-stone-500">{ext(item.file.name)}</span>
+                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[var(--border)] bg-[var(--grad-soft)]">
+                        <span className="text-[10px] font-black text-white">{ext(item.file.name)}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-stone-800 truncate">{item.file.name}</p>
-                        <p className="text-xs text-stone-400">{fmt(item.file.size)}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-white">{item.file.name}</p>
+                        <p className="text-xs text-[var(--text-3)]">{fmt(item.file.size)}</p>
                       </div>
                       <div className="shrink-0">
                         {item.status === "pending" && (
                           <button
                             onClick={(e) => { e.stopPropagation(); remove(item.id); }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-stone-100"
+                            className="rounded p-1 opacity-0 transition-opacity hover:bg-white/5 group-hover:opacity-100"
                           >
-                            <X className="w-3.5 h-3.5 text-stone-400 hover:text-red-500" />
+                            <X className="h-3.5 w-3.5 text-[var(--text-3)] hover:text-rose-400" />
                           </button>
                         )}
-                        {item.status === "uploading" && <Loader2 className="w-4 h-4 text-stone-500 animate-spin" />}
-                        {item.status === "done"      && <CheckCircle2 className="w-4 h-4 text-green-600" />}
-                        {item.status === "error"     && <AlertCircle  className="w-4 h-4 text-red-500" />}
+                        {item.status === "uploading" && <Loader2 className="h-4 w-4 animate-spin text-[var(--violet)]" />}
+                        {item.status === "done"      && <CheckCircle2 className="h-4 w-4 text-emerald-400" />}
+                        {item.status === "error"     && <AlertCircle className="h-4 w-4 text-rose-400" />}
                       </div>
                     </motion.li>
                   ))}
                 </ul>
 
-                <div className="px-5 py-3.5 border-t border-stone-100 flex items-center justify-between bg-stone-50">
-                  <p className="text-xs text-stone-400">
+                <div className="flex items-center justify-between border-t border-[var(--border)] bg-white/[0.02] px-5 py-3.5">
+                  <p className="text-xs text-[var(--text-3)]">
                     {allDone
                       ? "All files uploaded — AI processing started."
                       : `${pendingCount} file${pendingCount !== 1 ? "s" : ""} ready to upload`}
                   </p>
                   {allDone ? (
-                    <button
-                      onClick={() => router.push("/review")}
-                      className="btn btn-primary text-sm"
-                    >
-                      View Review Queue <ArrowRight className="w-3.5 h-3.5" />
+                    <button onClick={() => router.push("/review")} className="btn btn-primary">
+                      View Review Queue <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   ) : (
-                    <button
-                      onClick={upload}
-                      disabled={uploading || !pendingCount}
-                      className="btn btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
+                    <button onClick={upload} disabled={uploading || !pendingCount} className="btn btn-primary">
                       {uploading
-                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading…</>
-                        : <><UploadCloud className="w-3.5 h-3.5" /> Start AI Extraction</>}
+                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading…</>
+                        : <><UploadCloud className="h-3.5 w-3.5" /> Start AI Extraction</>}
                     </button>
                   )}
                 </div>
@@ -218,38 +207,35 @@ export default function UploadPage() {
 
         {/* Right: info panels */}
         <div className="space-y-4">
-          {/* File specs */}
           <div className="card p-5">
-            <h3 className="text-sm font-bold text-stone-800 mb-4">File Requirements</h3>
+            <h3 className="mb-4 text-sm font-bold text-white">File Requirements</h3>
             <div className="space-y-3">
               {TIPS.map((tip) => (
                 <div key={tip.title} className="flex items-start justify-between gap-3">
-                  <span className="text-xs text-stone-400 font-medium">{tip.title}</span>
-                  <span className="text-xs font-semibold text-stone-700 text-right">{tip.value}</span>
+                  <span className="text-xs font-medium text-[var(--text-3)]">{tip.title}</span>
+                  <span className="text-right text-xs font-semibold text-white">{tip.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* How it works */}
           <div className="card p-5">
-            <h3 className="text-sm font-bold text-stone-800 mb-4">How it works</h3>
+            <h3 className="mb-4 text-sm font-bold text-white">How it works</h3>
             <div className="space-y-4">
               {HOW_IT_WORKS.map((item) => (
                 <div key={item.step} className="flex gap-3">
-                  <span className="text-xs font-black text-stone-300 mt-0.5 shrink-0 w-6">{item.step}</span>
+                  <span className="gradient-text mt-0.5 w-6 shrink-0 font-[var(--font-display)] text-xs font-black">{item.step}</span>
                   <div>
-                    <p className="text-xs font-bold text-stone-700 mb-0.5">{item.title}</p>
-                    <p className="text-xs text-stone-400 leading-relaxed">{item.body}</p>
+                    <p className="mb-0.5 text-xs font-bold text-white">{item.title}</p>
+                    <p className="text-xs leading-relaxed text-[var(--text-3)]">{item.body}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Supported formats */}
           <div className="card p-5">
-            <h3 className="text-sm font-bold text-stone-800 mb-3">Supported Formats</h3>
+            <h3 className="mb-3 text-sm font-bold text-white">Supported Formats</h3>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { ext: "PDF", desc: "Most common" },
@@ -257,11 +243,11 @@ export default function UploadPage() {
                 { ext: "PNG", desc: "Scanned image" },
                 { ext: "JPG", desc: "Photograph" },
               ].map((f) => (
-                <div key={f.ext} className="flex items-center gap-2 p-2 rounded-lg bg-stone-50 border border-stone-100">
-                  <div className="w-7 h-7 rounded-md bg-stone-200 flex items-center justify-center shrink-0">
-                    <span className="text-[9px] font-black text-stone-600">{f.ext}</span>
+                <div key={f.ext} className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-white/[0.02] p-2">
+                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-[var(--grad-soft)]">
+                    <span className="text-[9px] font-black text-white">{f.ext}</span>
                   </div>
-                  <span className="text-xs text-stone-500">{f.desc}</span>
+                  <span className="text-xs text-[var(--text-3)]">{f.desc}</span>
                 </div>
               ))}
             </div>

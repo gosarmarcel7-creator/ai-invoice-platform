@@ -38,14 +38,14 @@ export function timeAgo(dateStr: string): string {
 export function statusConfig(status: string) {
   switch (status) {
     case "approved":
-      return { label: "Approved", dot: "bg-green-500", text: "text-green-700", bg: "bg-green-50", border: "border-green-200" };
+      return { label: "Approved", dot: "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]", text: "text-emerald-300", bg: "bg-emerald-500/10", border: "border-emerald-500/30" };
     case "review":
-      return { label: "Needs Review", dot: "bg-amber-500 animate-pulse", text: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200" };
+      return { label: "Needs Review", dot: "bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.8)]", text: "text-amber-300", bg: "bg-amber-500/10", border: "border-amber-500/30" };
     case "processing":
-      return { label: "Processing", dot: "bg-blue-400 animate-pulse", text: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" };
+      return { label: "Processing", dot: "bg-sky-400 animate-pulse shadow-[0_0_8px_rgba(56,189,248,0.8)]", text: "text-sky-300", bg: "bg-sky-500/10", border: "border-sky-500/30" };
     case "rejected":
-      return { label: "Rejected", dot: "bg-red-500", text: "text-red-700", bg: "bg-red-50", border: "border-red-200" };
+      return { label: "Rejected", dot: "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.8)]", text: "text-rose-300", bg: "bg-rose-500/10", border: "border-rose-500/30" };
     default:
-      return { label: status, dot: "bg-stone-400", text: "text-stone-600", bg: "bg-stone-100", border: "border-stone-200" };
+      return { label: status, dot: "bg-slate-400", text: "text-slate-300", bg: "bg-white/5", border: "border-white/15" };
   }
 }

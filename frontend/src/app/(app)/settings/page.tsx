@@ -6,14 +6,14 @@ import { toast } from "sonner";
 
 function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="block text-sm font-semibold text-stone-700 mb-1.5">
+    <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-semibold text-[var(--text-2)]">
       {children}
     </label>
   );
 }
 
 function Hint({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs text-stone-400 mt-1.5 leading-relaxed">{children}</p>;
+  return <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-3)]">{children}</p>;
 }
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -24,11 +24,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors focus:outline-none ${
-        checked ? "bg-stone-900" : "bg-stone-200"
+        checked ? "bg-[var(--grad)] shadow-[0_0_12px_-2px_rgba(124,108,255,0.8)]" : "bg-white/10"
       }`}
     >
       <span
-        className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform mt-0.5 ${
+        className={`pointer-events-none mt-0.5 inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
           checked ? "translate-x-[1.125rem]" : "translate-x-0.5"
         }`}
       />
@@ -40,14 +40,14 @@ function SectionCard({ icon: Icon, title, description, children }: {
   icon: React.ElementType; title: string; description: string; children: React.ReactNode;
 }) {
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-3 mb-5 pb-4 border-b border-stone-100">
-        <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center shrink-0">
-          <Icon className="w-4 h-4 text-stone-600" />
+    <div className="card card-hover p-6">
+      <div className="mb-5 flex items-center gap-3 border-b border-[var(--border)] pb-4">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[var(--border)] bg-[var(--grad-soft)]">
+          <Icon className="h-4 w-4 text-white" />
         </div>
         <div>
-          <h2 className="font-bold text-stone-900 text-sm">{title}</h2>
-          <p className="text-xs text-stone-400 mt-0.5">{description}</p>
+          <h2 className="text-sm font-bold text-white">{title}</h2>
+          <p className="mt-0.5 text-xs text-[var(--text-3)]">{description}</p>
         </div>
       </div>
       {children}
@@ -59,10 +59,10 @@ function ToggleRow({ label, sub, checked, onChange }: {
   label: string; sub: string; checked: boolean; onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between p-3.5 rounded-lg border border-stone-100 bg-stone-50">
+    <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-white/[0.02] p-3.5">
       <div>
-        <p className="text-sm font-semibold text-stone-800">{label}</p>
-        <p className="text-xs text-stone-400 mt-0.5">{sub}</p>
+        <p className="text-sm font-semibold text-white">{label}</p>
+        <p className="mt-0.5 text-xs text-[var(--text-3)]">{sub}</p>
       </div>
       <Toggle checked={checked} onChange={onChange} />
     </div>
@@ -91,39 +91,24 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-black text-stone-900">Settings</h1>
-          <p className="text-sm text-stone-400 mt-0.5">Configure your DocuExtract workspace</p>
+          <h1 className="font-[var(--font-display)] text-2xl font-bold tracking-tight text-white">Settings</h1>
+          <p className="mt-0.5 text-sm text-[var(--text-3)]">Configure your DocuExtract workspace</p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="btn btn-primary text-sm disabled:opacity-50"
-        >
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
           {saving
-            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
-            : <><Save className="w-3.5 h-3.5" /> Save Settings</>}
+            ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…</>
+            : <><Save className="h-3.5 w-3.5" /> Save Settings</>}
         </button>
       </div>
 
-      {/* Row 1: Notifications + Data */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      {/* Row 1 */}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <SectionCard icon={Bell} title="Notifications" description="Alerts for invoice pipeline events">
           <div className="space-y-3">
-            <ToggleRow
-              label="Email notifications"
-              sub="Daily digest of review queue activity"
-              checked={emailNotifs}
-              onChange={setEmailNotifs}
-            />
+            <ToggleRow label="Email notifications" sub="Daily digest of review queue activity" checked={emailNotifs} onChange={setEmailNotifs} />
             <div>
               <Label htmlFor="slack">Slack Webhook URL</Label>
-              <input
-                id="slack"
-                className="field-input"
-                value={slackWebhook}
-                onChange={(e) => setSlackWebhook(e.target.value)}
-                placeholder="https://hooks.slack.com/services/…"
-              />
+              <input id="slack" className="field-input" value={slackWebhook} onChange={(e) => setSlackWebhook(e.target.value)} placeholder="https://hooks.slack.com/services/…" />
               <Hint>Post alerts to Slack when invoices are approved or flagged for review.</Hint>
             </div>
           </div>
@@ -133,16 +118,16 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="retention">
-                Document retention — <span className="font-black text-stone-900">{retentionDays} days</span>
+                Document retention — <span className="gradient-text font-black">{retentionDays} days</span>
               </Label>
               <input
                 id="retention"
                 type="range" min={30} max={365} step={30}
                 value={retentionDays}
                 onChange={(e) => setRetentionDays(Number(e.target.value))}
-                className="w-full accent-stone-900 cursor-pointer"
+                className="w-full cursor-pointer accent-[var(--accent)]"
               />
-              <div className="flex justify-between text-xs text-stone-400 mt-1">
+              <div className="mt-1 flex justify-between text-xs text-[var(--text-3)]">
                 <span>30 days</span>
                 <span>1 year</span>
               </div>
@@ -152,14 +137,14 @@ export default function SettingsPage() {
         </SectionCard>
       </div>
 
-      {/* Row 2: Security + Workspace */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      {/* Row 2 */}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <SectionCard icon={Shield} title="Security" description="Access control and audit settings">
           <div className="space-y-3">
             {([
-              { key: "audit"  as const, label: "Audit log",                    sub: "Record all approve/reject actions" },
-              { key: "twofa"  as const, label: "Require 2FA for bulk actions",  sub: "Confirm identity before bulk deletes" },
-              { key: "iplist" as const, label: "IP allowlist",                  sub: "Restrict to specific IP ranges (Enterprise)" },
+              { key: "audit"  as const, label: "Audit log",                   sub: "Record all approve/reject actions" },
+              { key: "twofa"  as const, label: "Require 2FA for bulk actions", sub: "Confirm identity before bulk deletes" },
+              { key: "iplist" as const, label: "IP allowlist",                 sub: "Restrict to specific IP ranges (Enterprise)" },
             ]).map((item) => (
               <ToggleRow
                 key={item.key}
@@ -176,12 +161,7 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="date-format">Date format</Label>
-              <select
-                id="date-format"
-                className="field-input"
-                value={dateFormat}
-                onChange={(e) => setDateFormat(e.target.value)}
-              >
+              <select id="date-format" className="field-input" value={dateFormat} onChange={(e) => setDateFormat(e.target.value)}>
                 <option>MM/DD/YYYY</option>
                 <option>DD/MM/YYYY</option>
                 <option>YYYY-MM-DD (ISO)</option>
@@ -189,12 +169,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <Label htmlFor="currency">Currency</Label>
-              <select
-                id="currency"
-                className="field-input"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-              >
+              <select id="currency" className="field-input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
                 <option>USD ($)</option>
                 <option>EUR (€)</option>
                 <option>GBP (£)</option>
@@ -203,12 +178,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <Label htmlFor="page-size">Default page size</Label>
-              <select
-                id="page-size"
-                className="field-input"
-                value={pageSize}
-                onChange={(e) => setPageSize(e.target.value)}
-              >
+              <select id="page-size" className="field-input" value={pageSize} onChange={(e) => setPageSize(e.target.value)}>
                 <option value="15">15 per page</option>
                 <option value="25">25 per page</option>
                 <option value="50">50 per page</option>
