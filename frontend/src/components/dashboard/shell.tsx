@@ -14,7 +14,6 @@ import {
   X,
   Sparkles,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Logo, LogoMark } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { cn, initials } from "@/lib/utils";
@@ -25,6 +24,13 @@ const nav = [
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings },
 ];
+
+const headings: Record<string, { title: string; sub: string }> = {
+  overview: { title: "Overview", sub: "Welcome back — here’s your pipeline." },
+  invoices: { title: "Invoices", sub: "Review, edit, and approve extracted documents." },
+  analytics: { title: "Analytics", sub: "Volume, value, and status trends." },
+  settings: { title: "Settings", sub: "Manage your workspace and connections." },
+};
 
 function NavItems({
   active,
@@ -63,7 +69,6 @@ function NavItems({
 
 export function Shell({
   email,
-  demo,
   onUploadClick,
   onSignOut,
   active,
@@ -71,7 +76,6 @@ export function Shell({
   children,
 }: {
   email: string | null;
-  demo: boolean;
   onUploadClick: () => void;
   onSignOut: () => void;
   active: string;
@@ -79,11 +83,9 @@ export function Shell({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const heading = headings[active] ?? headings.overview;
 
   const handleNavigate = (id: string) => {
-    if (id === "settings") {
-      toast.message("Settings", { description: "Workspace settings are coming soon." });
-    }
     onNavigate(id);
     setMobileOpen(false);
   };
@@ -113,7 +115,7 @@ export function Shell({
             </span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-xs font-medium text-ink">{email ?? "Guest"}</div>
-              <div className="text-[0.66rem] text-ink-faint">{demo ? "Demo mode" : "Member"}</div>
+              <div className="text-[0.66rem] text-ink-faint">Member</div>
             </div>
             <button
               onClick={onSignOut}
@@ -182,17 +184,14 @@ export function Shell({
               <LogoMark />
             </span>
             <div className="hidden sm:block">
-              <h1 className="text-[0.95rem] font-semibold tracking-tight text-ink">Overview</h1>
-              <p className="text-[0.7rem] text-ink-mute">Welcome back — here’s your pipeline.</p>
+              <h1 className="text-[0.95rem] font-semibold tracking-tight text-ink">
+                {heading.title}
+              </h1>
+              <p className="text-[0.7rem] text-ink-mute">{heading.sub}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5">
-            {demo && (
-              <span className="hidden items-center gap-1.5 rounded-full border border-review/30 bg-review/10 px-2.5 py-1 text-[0.7rem] font-medium text-review sm:inline-flex">
-                <span className="h-1.5 w-1.5 rounded-full bg-review" /> Demo data
-              </span>
-            )}
             <Button size="sm" onClick={onUploadClick} className="group">
               <UploadCloud className="h-4 w-4" />
               <span className="hidden sm:inline">Upload</span>
