@@ -1,11 +1,21 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-// Service-role client for server-side API routes (bypasses RLS)
-export const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+type AdminClient = SupabaseClient<any, "public", any>;
+
+let cachedAdmin: AdminClient | null = null;
+
+// Service-role client for server-side API routes (bypasses RLS).
+// Keep initialization lazy so `next build` can evaluate route modules without runtime env vars.
+export function getSupabaseAdmin() {
+  if (!cachedAdmin) {
+    cachedAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    ) as AdminClient;
+  }
+  return cachedAdmin;
+}
 
 // User-scoped client using their JWT (enforces RLS)
 export function supabaseForUser(accessToken: string) {

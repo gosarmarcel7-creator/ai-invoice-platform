@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, getUserFromRequest } from "@/lib/supabase-admin";
+import { getSupabaseAdmin, getUserFromRequest } from "@/lib/supabase-admin";
 import { extractInvoiceData } from "@/lib/mistral";
 
 async function extractText(buffer: Buffer, filename: string): Promise<string> {
@@ -16,6 +16,7 @@ async function extractText(buffer: Buffer, filename: string): Promise<string> {
 }
 
 async function processInvoice(invoiceId: number, text: string) {
+  const supabaseAdmin = getSupabaseAdmin();
   const extracted = await extractInvoiceData(text);
   const lineItems = (extracted.line_items as Record<string, unknown>[]) ?? [];
 
@@ -45,6 +46,7 @@ async function processInvoice(invoiceId: number, text: string) {
 export async function GET(req: NextRequest) {
   const token = getUserFromRequest(req);
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const supabaseAdmin = getSupabaseAdmin();
 
   const url = req.nextUrl;
   const page = parseInt(url.searchParams.get("page") ?? "1");
@@ -86,6 +88,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const token = getUserFromRequest(req);
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const supabaseAdmin = getSupabaseAdmin();
 
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });

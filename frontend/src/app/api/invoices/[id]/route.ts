@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, getUserFromRequest } from "@/lib/supabase-admin";
+import { getSupabaseAdmin, getUserFromRequest } from "@/lib/supabase-admin";
 
 async function getUser(req: NextRequest) {
   const token = getUserFromRequest(req);
   if (!token) return null;
+  const supabaseAdmin = getSupabaseAdmin();
   const { data: { user } } = await supabaseAdmin.auth.getUser(token);
   return user ?? null;
 }
@@ -12,6 +13,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const supabaseAdmin = getSupabaseAdmin();
 
   const { data, error } = await supabaseAdmin
     .from("invoices")
@@ -28,6 +30,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const supabaseAdmin = getSupabaseAdmin();
 
   // Verify ownership
   const { data: existing } = await supabaseAdmin
@@ -69,6 +72,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const supabaseAdmin = getSupabaseAdmin();
 
   const { error } = await supabaseAdmin
     .from("invoices")
