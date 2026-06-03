@@ -10,7 +10,7 @@ const tiers = [
     name: "Starter",
     price: "$0",
     cadence: "/mo",
-    blurb: "For trying Sift on real documents.",
+    blurb: "For trying DocuExtract on real documents.",
     cta: "Start free",
     href: "/login?mode=signup",
     featured: false,

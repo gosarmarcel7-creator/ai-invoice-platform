@@ -105,7 +105,7 @@ export function Shell({
               <Sparkles className="h-4 w-4 text-brand-bright" /> AI extraction
             </div>
             <p className="mt-1.5 text-[0.7rem] leading-relaxed text-ink-mute">
-              Drop a PDF or image and Sift extracts the vendor, totals, and line items automatically.
+              Drop a PDF or image and DocuExtract extracts the vendor, totals, and line items automatically.
             </p>
           </div>
 

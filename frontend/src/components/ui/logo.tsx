@@ -10,21 +10,21 @@ export function LogoMark({ className }: { className?: string }) {
     >
       <svg viewBox="0 0 40 40" fill="none" className="h-full w-full">
         <defs>
-          <linearGradient id="sift-surface" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+          <linearGradient id="docuextract-surface" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
             <stop stopColor="#0f766e" />
             <stop offset="0.58" stopColor="#0ea5a4" />
             <stop offset="1" stopColor="#67e8f9" />
           </linearGradient>
-          <linearGradient id="sift-page" x1="13" y1="10" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+          <linearGradient id="docuextract-page" x1="13" y1="10" x2="28" y2="28" gradientUnits="userSpaceOnUse">
             <stop stopColor="white" stopOpacity="0.96" />
             <stop offset="1" stopColor="white" stopOpacity="0.82" />
           </linearGradient>
         </defs>
         <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="#072f33" />
-        <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#sift-surface)" fillOpacity="0.92" />
+        <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#docuextract-surface)" fillOpacity="0.92" />
         <path
           d="M12.5 10.5h11.5l4.5 4.4v13.6c0 1.1-.9 2-2 2h-14c-1.1 0-2-.9-2-2v-16c0-1.1.9-2 2-2Z"
-          fill="url(#sift-page)"
+          fill="url(#docuextract-page)"
         />
         <path d="M24 10.5v4.2c0 1 .8 1.8 1.8 1.8H30" fill="white" fillOpacity="0.45" />
         <path
@@ -55,7 +55,7 @@ export function Logo({
       <LogoMark />
       {showWord && (
         <span className="inline-flex items-baseline gap-1">
-          <span className="text-[1.35rem] font-semibold tracking-tight text-ink">Sift</span>
+          <span className="text-[1.35rem] font-semibold tracking-tight text-ink">DocuExtract</span>
           <span className="text-[0.66rem] font-semibold uppercase tracking-[0.22em] text-brand-bright/80">
             AI
           </span>

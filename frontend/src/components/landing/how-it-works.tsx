@@ -8,7 +8,7 @@ const steps = [
     icon: Upload,
     step: "01",
     title: "Drop the document",
-    body: "Upload a PDF, scan, or photo — single file or in bulk. Sift queues it instantly and starts work.",
+    body: "Upload a PDF, scan, or photo — single file or in bulk. DocuExtract queues it instantly and starts work.",
   },
   {
     icon: Cpu,

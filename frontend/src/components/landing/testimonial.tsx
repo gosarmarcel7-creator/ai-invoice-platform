@@ -15,7 +15,7 @@ export function Testimonial() {
             “
           </span>
           <blockquote className="-mt-4 text-balance text-xl font-medium leading-relaxed tracking-tight text-ink sm:text-2xl">
-            We closed our month-end two days early. Sift reads our messiest vendor PDFs
+            We closed our month-end two days early. DocuExtract reads our messiest vendor PDFs
             better than the people who used to key them in — and we finally trust the
             numbers.
           </blockquote>

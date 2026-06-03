@@ -47,7 +47,7 @@ export function Hero() {
             transition={{ duration: 0.75, ease, delay: 0.12 }}
             className="mt-5 max-w-xl text-pretty text-[1.05rem] leading-relaxed text-ink-soft"
           >
-            Drop in a PDF or scan and Sift returns clean, structured, line-item-level
+            Drop in a PDF or scan and DocuExtract returns clean, structured, line-item-level
             data in seconds — with confidence scores, human-in-the-loop review, and
             analytics your finance team will actually trust.
           </motion.p>

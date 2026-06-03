@@ -18,14 +18,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Sift — Invoices, understood by AI",
-    template: "%s · Sift",
+    default: "DocuExtract — Invoices, understood by AI",
+    template: "%s · DocuExtract",
   },
   description:
-    "Sift turns any invoice into clean, structured, verified data in seconds. AI extraction, human-in-the-loop review, and real-time analytics for finance teams.",
+    "DocuExtract turns any invoice into clean, structured, verified data in seconds. AI extraction, human-in-the-loop review, and real-time analytics for finance teams.",
   keywords: ["invoice automation", "AP automation", "AI invoice extraction", "accounts payable", "finance"],
   openGraph: {
-    title: "Sift — Invoices, understood by AI",
+    title: "DocuExtract — Invoices, understood by AI",
     description: "AI-powered invoice extraction, review, and analytics for modern finance teams.",
     type: "website",
   },

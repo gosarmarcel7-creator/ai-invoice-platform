@@ -55,7 +55,7 @@ export function Features() {
           <span className="text-accent">a PDF</span> and your ledger
         </h2>
         <p className="mt-4 text-pretty text-ink-soft">
-          Sift handles capture, extraction, validation, and analytics — so your team
+          DocuExtract handles capture, extraction, validation, and analytics — so your team
           reviews exceptions instead of typing rows.
         </p>
       </Reveal>

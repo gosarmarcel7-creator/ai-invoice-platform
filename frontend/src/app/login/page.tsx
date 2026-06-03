@@ -43,7 +43,7 @@ function LoginInner() {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        toast.success("Account created", { description: "Welcome to Sift." });
+        toast.success("Account created", { description: "Welcome to DocuExtract." });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -87,7 +87,7 @@ function LoginInner() {
             <p className="mt-2 text-sm text-ink-mute">
               {mode === "signup"
                 ? "Start turning invoices into structured data."
-                : "Sign in to your Sift workspace."}
+                : "Sign in to your DocuExtract workspace."}
             </p>
 
             {!isSupabaseConfigured && (
@@ -144,7 +144,7 @@ function LoginInner() {
             </form>
 
             <p className="mt-6 text-center text-sm text-ink-mute">
-              {mode === "signup" ? "Already have an account?" : "New to Sift?"}{" "}
+              {mode === "signup" ? "Already have an account?" : "New to DocuExtract?"}{" "}
               <button
                 onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
                 className="focus-ring rounded font-medium text-brand-bright hover:underline"
@@ -179,7 +179,7 @@ function LoginInner() {
             </motion.h2>
           </AnimatePresence>
           <p className="mt-4 max-w-sm text-ink-soft">
-            Sift reads, structures, and verifies every document — so your team reviews
+            DocuExtract reads, structures, and verifies every document — so your team reviews
             exceptions instead of typing rows.
           </p>
           <ul className="mt-8 space-y-3">
