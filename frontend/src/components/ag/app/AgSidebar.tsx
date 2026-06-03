@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Upload, ClipboardList,
-  BarChart3, Settings, Sparkles, LogOut,
+  BarChart3, Settings, LogOut,
 } from "lucide-react";
 
 const navLinks = [
@@ -50,14 +50,16 @@ export default function AgSidebar() {
   };
 
   return (
-    <aside className="ag-sidebar sticky top-0 flex h-screen w-60 shrink-0 flex-col">
-      <div className="flex h-[72px] items-center border-b border-[var(--ag-border)] px-5">
+    <aside className="ag-sidebar sticky top-0 z-10 flex h-screen w-60 shrink-0 flex-col">
+      <div className="flex h-[72px] items-center border-b border-[var(--ag-outline)] px-5">
         <Link href="/" className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--ag-gradient-primary)] shadow-[var(--ag-shadow-glow)]">
-            <Sparkles className="h-5 w-5 text-white" />
+          <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--ag-accent)]">
+            <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="currentColor" aria-hidden>
+              <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
+            </svg>
           </div>
           <div>
-            <span className="font-[family-name:var(--font-display)] text-base font-bold text-white">DocuExtract</span>
+            <span className="text-base font-bold text-[var(--ag-on-surface)]">DocuExtract</span>
             <span className="block text-[10px] text-[var(--ag-text-tertiary)]">AI Platform</span>
           </div>
         </Link>
@@ -77,20 +79,20 @@ export default function AgSidebar() {
               href={link.href}
               className={cn("ag-nav-link", isActive && "ag-nav-link-active")}
             >
-              <link.icon className={cn("h-5 w-5 shrink-0", isActive ? "text-[var(--ag-primary-400)]" : "")} />
+              <link.icon className={cn("h-5 w-5 shrink-0", isActive ? "text-[var(--ag-accent)]" : "")} />
               <span className="truncate">{link.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-[var(--ag-border)] p-4">
-        <div className="flex items-center gap-3 rounded-2xl border border-[var(--ag-border)] bg-[var(--ag-surface-glass)] p-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--ag-gradient-primary)]">
+      <div className="border-t border-[var(--ag-outline)] p-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-[var(--ag-outline)] bg-[var(--ag-surface-container)] p-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--ag-primary)]">
             <span className="text-sm font-black text-white">{userInitial}</span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-white">
+            <p className="truncate text-sm font-semibold text-[var(--ag-on-surface)]">
               {userEmail ? userEmail.split("@")[0] : "Admin"}
             </p>
             <p className="truncate text-[11px] text-[var(--ag-text-tertiary)]">
@@ -102,7 +104,7 @@ export default function AgSidebar() {
               type="button"
               onClick={handleLogout}
               title="Sign out"
-              className="shrink-0 rounded-lg p-1.5 text-[var(--ag-text-tertiary)] hover:bg-white/5 hover:text-[var(--ag-primary-400)]"
+              className="shrink-0 rounded-lg p-1.5 text-[var(--ag-text-tertiary)] hover:bg-[var(--ag-surface-container-high)] hover:text-[var(--ag-accent)]"
             >
               <LogOut className="h-4 w-4" />
             </button>

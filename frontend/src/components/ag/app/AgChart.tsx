@@ -4,20 +4,20 @@ export function AgChartGradients() {
   return (
     <defs>
       <linearGradient id="agProcessed" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="5%" stopColor="#be93ff" stopOpacity={0.4} />
-        <stop offset="95%" stopColor="#be93ff" stopOpacity={0} />
+        <stop offset="5%" stopColor="#3279f9" stopOpacity={0.25} />
+        <stop offset="95%" stopColor="#3279f9" stopOpacity={0} />
       </linearGradient>
       <linearGradient id="agApproved" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="5%" stopColor="#34d399" stopOpacity={0.35} />
-        <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+        <stop offset="5%" stopColor="#137333" stopOpacity={0.2} />
+        <stop offset="95%" stopColor="#137333" stopOpacity={0} />
       </linearGradient>
       <linearGradient id="agBar" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#a855f7" />
-        <stop offset="100%" stopColor="#6366f1" />
+        <stop offset="0%" stopColor="#3279f9" />
+        <stop offset="100%" stopColor="#121317" />
       </linearGradient>
       <linearGradient id="agV" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
-        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+        <stop offset="5%" stopColor="#3279f9" stopOpacity={0.25} />
+        <stop offset="95%" stopColor="#3279f9" stopOpacity={0} />
       </linearGradient>
     </defs>
   );
@@ -31,10 +31,10 @@ export function AgChartTip({ active, payload, label }: {
   if (!active || !payload?.length) return null;
   return (
     <div className="ag-chart-tip">
-      <p className="mb-1 font-semibold text-white">{label}</p>
+      <p className="mb-1 font-semibold text-[var(--ag-on-surface)]">{label}</p>
       {payload.map((p) => (
         <p key={p.dataKey} className="capitalize" style={{ color: p.color }}>
-          {p.name ?? p.dataKey}: <span className="font-bold text-white">{p.value}</span>
+          {p.name ?? p.dataKey}: <span className="font-bold">{p.value}</span>
         </p>
       ))}
     </div>
@@ -42,14 +42,14 @@ export function AgChartTip({ active, payload, label }: {
 }
 
 export const CHART_COLORS = {
-  processed: "#be93ff",
-  approved: "#34d399",
-  processing: "#38bdf8",
-  review: "#fbbf24",
+  processed: "#3279f9",
+  approved: "#137333",
+  processing: "#3279f9",
+  review: "#b06000",
 };
 
-export const CHART_AXIS = { fill: "#8a8a9a", fontSize: 11 };
-export const CHART_GRID = "rgba(255,255,255,0.06)";
+export const CHART_AXIS = { fill: "#6a6a71", fontSize: 11 };
+export const CHART_GRID = "rgba(33, 34, 38, 0.08)";
 
 export function AgChartCard({
   title,
@@ -63,9 +63,9 @@ export function AgChartCard({
   className?: string;
 }) {
   return (
-    <div className={`ag-card ag-card-glow p-5 ${className}`}>
+    <div className={`ag-card p-5 ${className}`}>
       <div className="mb-5">
-        <h2 className="text-sm font-bold text-white">{title}</h2>
+        <h2 className="text-sm font-bold text-[var(--ag-on-surface)]">{title}</h2>
         {subtitle && <p className="mt-0.5 text-xs text-[var(--ag-text-tertiary)]">{subtitle}</p>}
       </div>
       {children}

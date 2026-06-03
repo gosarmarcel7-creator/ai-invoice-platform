@@ -31,10 +31,8 @@ export default function AgCtaBand() {
             <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--ag-text-tertiary)]">
               {card.eyebrow}
             </p>
-            <h3 className="mb-3 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
-              {card.title}
-            </h3>
-            <p className="mb-6 flex-1 text-sm leading-relaxed text-[var(--ag-text-secondary)]">
+            <h3 className="mb-3 text-2xl font-bold text-[var(--ag-on-surface)]">{card.title}</h3>
+            <p className="mb-6 flex-1 text-sm leading-relaxed text-[var(--ag-on-surface-variant)]">
               {card.body}
             </p>
             <Link

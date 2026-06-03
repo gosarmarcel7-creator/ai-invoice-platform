@@ -100,8 +100,8 @@ export default function UploadPage() {
             whileHover={{ scale: 1.005 }}
             className={`relative cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed p-16 text-center transition-all ${
               dragging
-                ? "border-[var(--ag-primary-500)] bg-[var(--ag-primary-500)]/10 shadow-[var(--ag-shadow-glow)]"
-                : "border-[var(--ag-border-strong)] bg-[var(--ag-surface-glass)] hover:border-[var(--ag-border-glow)]"
+                ? "border-[var(--ag-primary)] bg-[var(--ag-primary)]/10 shadow-[var(--ag-shadow-glow)]"
+                : "border-[var(--ag-border-strong)] bg-[var(--ag-surface-glass)] hover:border-[var(--ag-outline-strong)]"
             }`}
           >
             <input
@@ -112,12 +112,12 @@ export default function UploadPage() {
               accept=".pdf,.txt,.png,.jpg,.jpeg"
               onChange={(e) => e.target.files && add(e.target.files)}
             />
-            <UploadCloud className={`mx-auto mb-3 h-10 w-10 ${dragging ? "text-white" : "text-[var(--ag-primary-400)]"}`} />
-            <p className="text-sm font-semibold text-white">
+            <UploadCloud className={`mx-auto mb-3 h-10 w-10 ${dragging ? "text-[var(--ag-on-surface)]" : "text-[var(--ag-accent)]"}`} />
+            <p className="text-sm font-semibold text-[var(--ag-on-surface)]">
               {dragging ? "Drop files to upload" : "Drag & drop invoices here"}
             </p>
             <p className="mt-1 text-sm text-[var(--ag-text-tertiary)]">
-              or <span className="font-semibold text-[var(--ag-violet-400)] underline">browse</span> to choose files
+              or <span className="font-semibold text-[var(--ag-accent)] underline">browse</span> to choose files
             </p>
           </motion.div>
 
@@ -126,7 +126,7 @@ export default function UploadPage() {
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <AgGlassCard className="overflow-hidden">
                   <div className="flex items-center justify-between border-b border-[var(--ag-border)] px-5 py-3.5">
-                    <p className="text-sm font-bold text-white">{queue.length} file{queue.length !== 1 ? "s" : ""} selected</p>
+                    <p className="text-sm font-bold text-[var(--ag-on-surface)]">{queue.length} file{queue.length !== 1 ? "s" : ""} selected</p>
                     {!uploading && !allDone && (
                       <button type="button" onClick={() => setQueue([])} className="text-xs text-[var(--ag-text-tertiary)] hover:text-rose-400">
                         Clear all
@@ -140,7 +140,7 @@ export default function UploadPage() {
                           {ext(item.file.name)}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-white">{item.file.name}</p>
+                          <p className="truncate text-sm font-medium text-[var(--ag-on-surface)]">{item.file.name}</p>
                           <p className="text-xs text-[var(--ag-text-tertiary)]">{fmt(item.file.size)}</p>
                         </div>
                         {item.status === "pending" && (
@@ -148,7 +148,7 @@ export default function UploadPage() {
                             <X className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        {item.status === "uploading" && <Loader2 className="h-4 w-4 animate-spin text-[var(--ag-violet-400)]" />}
+                        {item.status === "uploading" && <Loader2 className="h-4 w-4 animate-spin text-[var(--ag-accent)]" />}
                         {item.status === "done" && <CheckCircle2 className="h-4 w-4 text-emerald-400" />}
                         {item.status === "error" && <AlertCircle className="h-4 w-4 text-rose-400" />}
                       </li>
@@ -176,24 +176,24 @@ export default function UploadPage() {
 
         <div className="space-y-4">
           <AgGlassCard className="p-5">
-            <h3 className="mb-4 text-sm font-bold text-white">File Requirements</h3>
+            <h3 className="mb-4 text-sm font-bold text-[var(--ag-on-surface)]">File Requirements</h3>
             <div className="space-y-3">
               {TIPS.map((tip) => (
                 <div key={tip.title} className="flex justify-between gap-3 text-xs">
                   <span className="text-[var(--ag-text-tertiary)]">{tip.title}</span>
-                  <span className="font-semibold text-white">{tip.value}</span>
+                  <span className="font-semibold text-[var(--ag-on-surface)]">{tip.value}</span>
                 </div>
               ))}
             </div>
           </AgGlassCard>
           <AgGlassCard className="p-5">
-            <h3 className="mb-4 text-sm font-bold text-white">How it works</h3>
+            <h3 className="mb-4 text-sm font-bold text-[var(--ag-on-surface)]">How it works</h3>
             <div className="space-y-4">
               {HOW_IT_WORKS.map((item) => (
                 <div key={item.step} className="flex gap-3">
                   <span className="ag-gradient-text w-6 shrink-0 text-xs font-black">{item.step}</span>
                   <div>
-                    <p className="text-xs font-bold text-white">{item.title}</p>
+                    <p className="text-xs font-bold text-[var(--ag-on-surface)]">{item.title}</p>
                     <p className="text-xs text-[var(--ag-text-tertiary)]">{item.body}</p>
                   </div>
                 </div>

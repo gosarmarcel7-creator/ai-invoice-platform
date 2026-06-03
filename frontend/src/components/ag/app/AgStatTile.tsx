@@ -7,7 +7,7 @@ export default function AgStatTile({
   label,
   value,
   icon,
-  accent = "from-[var(--ag-primary-400)] to-[var(--ag-violet-400)]",
+  accent = "from-[var(--ag-accent)] to-[var(--ag-primary)]",
   delay = 0,
   loading = false,
 }: {
@@ -28,11 +28,11 @@ export default function AgStatTile({
             {loading ? (
               <div className="ag-skeleton h-7 w-20" />
             ) : (
-              <p className="tabnum font-[family-name:var(--font-display)] text-2xl font-bold text-white">{value}</p>
+              <p className="tabnum text-2xl font-bold text-[var(--ag-on-surface)]">{value}</p>
             )}
           </div>
           {icon && (
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[var(--ag-border)] bg-[var(--ag-gradient-surface)]">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[var(--ag-outline)] bg-[var(--ag-surface-container-high)]">
               {icon}
             </div>
           )}

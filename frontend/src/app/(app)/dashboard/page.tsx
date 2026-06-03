@@ -80,11 +80,11 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {[
-          { label: "Total", value: a.total_documents, accent: "from-[var(--ag-violet-400)] to-[var(--ag-primary-400)]", icon: <FileText className="h-4 w-4 text-[var(--ag-violet-400)]" /> },
-          { label: "Processing", value: a.processing, accent: "from-[var(--ag-cyan-400)] to-cyan-500", icon: <Clock className="h-4 w-4 text-[var(--ag-cyan-400)]" /> },
-          { label: "For Review", value: a.awaiting_review, accent: "from-[var(--ag-violet-400)] to-pink-400", icon: <TrendingUp className="h-4 w-4 text-[var(--ag-violet-400)]" /> },
-          { label: "Approved", value: a.approved, accent: "from-[var(--ag-emerald-400)] to-emerald-500", icon: <CheckCircle2 className="h-4 w-4 text-[var(--ag-emerald-400)]" /> },
-          { label: "Total Value", value: formatCurrency(a.total_value), accent: "from-[var(--ag-primary-400)] to-[var(--ag-violet-400)]", icon: <DollarSign className="h-4 w-4 text-[var(--ag-primary-400)]" /> },
+          { label: "Total", value: a.total_documents, accent: "from-[var(--ag-accent)] to-[var(--ag-primary)]", icon: <FileText className="h-4 w-4 text-[var(--ag-accent)]" /> },
+          { label: "Processing", value: a.processing, accent: "from-[var(--ag-accent)] to-slate-400", icon: <Clock className="h-4 w-4 text-[var(--ag-accent)]" /> },
+          { label: "For Review", value: a.awaiting_review, accent: "from-amber-500 to-amber-600", icon: <TrendingUp className="h-4 w-4 text-amber-600" /> },
+          { label: "Approved", value: a.approved, accent: "from-emerald-500 to-emerald-600", icon: <CheckCircle2 className="h-4 w-4 text-emerald-600" /> },
+          { label: "Total Value", value: formatCurrency(a.total_value), accent: "from-[var(--ag-primary)] to-slate-600", icon: <DollarSign className="h-4 w-4 text-[var(--ag-on-surface)]" /> },
         ].map((stat, i) => (
           <AgStatTile key={stat.label} {...stat} delay={i * 0.04} loading={loading} />
         ))}
@@ -101,7 +101,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
                 <XAxis dataKey="day" tick={CHART_AXIS} axisLine={false} tickLine={false} />
                 <YAxis tick={CHART_AXIS} axisLine={false} tickLine={false} />
-                <Tooltip content={<AgChartTip />} cursor={{ stroke: "rgba(255,255,255,0.1)" }} />
+                <Tooltip content={<AgChartTip />} cursor={{ stroke: "rgba(33,34,38,0.08)" }} />
                 <Area type="monotone" dataKey="processed" stroke={CHART_COLORS.processed} strokeWidth={2} fill="url(#agProcessed)" dot={false} />
                 <Area type="monotone" dataKey="approved" stroke={CHART_COLORS.approved} strokeWidth={2} fill="url(#agApproved)" dot={false} />
               </AreaChart>
@@ -110,37 +110,37 @@ export default function DashboardPage() {
         </AgChartCard>
 
         <AgGlassCard className="p-5">
-          <h2 className="mb-4 text-sm font-bold text-white">Quick Actions</h2>
+          <h2 className="mb-4 text-sm font-bold text-[var(--ag-on-surface)]">Quick Actions</h2>
           <div className="space-y-1.5">
             {[
-              { href: "/upload", label: "Upload Invoices", sub: "Add new documents", icon: <Upload className="h-4 w-4 text-[var(--ag-primary-400)]" /> },
-              { href: "/review", label: "Review Queue", sub: `${a.awaiting_review} pending`, icon: <TrendingUp className="h-4 w-4 text-[var(--ag-cyan-400)]" /> },
-              { href: "/analytics", label: "View Analytics", sub: "Pipeline metrics", icon: <CheckCircle2 className="h-4 w-4 text-[var(--ag-emerald-400)]" /> },
+              { href: "/upload", label: "Upload Invoices", sub: "Add new documents", icon: <Upload className="h-4 w-4 text-[var(--ag-accent)]" /> },
+              { href: "/review", label: "Review Queue", sub: `${a.awaiting_review} pending`, icon: <TrendingUp className="h-4 w-4 text-amber-600" /> },
+              { href: "/analytics", label: "View Analytics", sub: "Pipeline metrics", icon: <CheckCircle2 className="h-4 w-4 text-emerald-600" /> },
             ].map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
-                className="group flex items-center gap-3 rounded-xl border border-transparent p-3 transition-all hover:border-[var(--ag-border-glow)] hover:bg-[var(--ag-surface-glass)]"
+                className="group flex items-center gap-3 rounded-xl border border-transparent p-3 transition-all hover:border-[var(--ag-outline-strong)] hover:bg-[var(--ag-surface-glass)]"
               >
                 <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[var(--ag-border)] bg-[var(--ag-gradient-surface)]">
                   {item.icon}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white">{item.label}</p>
+                  <p className="text-sm font-semibold text-[var(--ag-on-surface)]">{item.label}</p>
                   <p className="truncate text-xs text-[var(--ag-text-tertiary)]">{item.sub}</p>
                 </div>
-                <ArrowRight className="h-3.5 w-3.5 text-[var(--ag-text-tertiary)] group-hover:text-[var(--ag-primary-400)]" />
+                <ArrowRight className="h-3.5 w-3.5 text-[var(--ag-text-tertiary)] group-hover:text-[var(--ag-accent)]" />
               </Link>
             ))}
           </div>
           <div className="mt-5 space-y-3 border-t border-[var(--ag-border)] pt-4 text-sm">
             <div className="flex justify-between">
               <span className="text-[var(--ag-text-tertiary)]">Total value</span>
-              <span className="tabnum font-bold text-white">{formatCurrency(a.total_value)}</span>
+              <span className="tabnum font-bold text-[var(--ag-on-surface)]">{formatCurrency(a.total_value)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--ag-text-tertiary)]">Avg confidence</span>
-              <span className="tabnum font-bold text-white">{a.avg_confidence}%</span>
+              <span className="tabnum font-bold text-[var(--ag-on-surface)]">{a.avg_confidence}%</span>
             </div>
           </div>
         </AgGlassCard>
@@ -148,8 +148,8 @@ export default function DashboardPage() {
 
       <AgTableWrap>
         <div className="flex items-center justify-between border-b border-[var(--ag-border)] px-5 py-4">
-          <h2 className="text-sm font-bold text-white">Recent Invoices</h2>
-          <Link href="/review" className="flex items-center gap-1 text-xs font-semibold text-[var(--ag-text-tertiary)] hover:text-[var(--ag-primary-400)]">
+          <h2 className="text-sm font-bold text-[var(--ag-on-surface)]">Recent Invoices</h2>
+          <Link href="/review" className="flex items-center gap-1 text-xs font-semibold text-[var(--ag-text-tertiary)] hover:text-[var(--ag-accent)]">
             View all <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
@@ -185,16 +185,16 @@ export default function DashboardPage() {
                   <td>
                     <div className="flex items-center gap-2.5">
                       <FileText className="h-4 w-4 text-[var(--ag-text-tertiary)]" />
-                      <span className="max-w-[150px] truncate text-sm font-medium text-white">{inv.filename}</span>
+                      <span className="max-w-[150px] truncate text-sm font-medium text-[var(--ag-on-surface)]">{inv.filename}</span>
                     </div>
                   </td>
                   <td className="hidden text-sm text-[var(--ag-text-secondary)] sm:table-cell">{inv.vendor_name || "—"}</td>
-                  <td className="tabnum hidden text-sm font-semibold text-white md:table-cell">{formatCurrency(inv.total_amount)}</td>
+                  <td className="tabnum hidden text-sm font-semibold text-[var(--ag-on-surface)] md:table-cell">{formatCurrency(inv.total_amount)}</td>
                   <td className="hidden text-sm text-[var(--ag-text-tertiary)] lg:table-cell">{timeAgo(inv.uploaded_at)}</td>
                   <td><AgStatusBadge status={inv.status} /></td>
                   <td className="text-right">
                     {inv.status === "review" && (
-                      <Link href={`/review/${inv.id}`} className="text-xs font-semibold text-[var(--ag-primary-400)]">
+                      <Link href={`/review/${inv.id}`} className="text-xs font-semibold text-[var(--ag-accent)]">
                         Review →
                       </Link>
                     )}

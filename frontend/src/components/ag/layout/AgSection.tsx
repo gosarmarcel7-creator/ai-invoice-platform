@@ -5,18 +5,21 @@ export default function AgSection({
   children,
   className = "",
   bordered = false,
+  tone = "surface",
 }: {
   id?: string;
   children: React.ReactNode;
   className?: string;
   bordered?: boolean;
+  tone?: "surface" | "muted";
 }) {
   return (
     <section
       id={id}
       className={cn(
         "px-6 py-24",
-        bordered && "border-y border-[var(--ag-border)]",
+        tone === "muted" ? "ag-section-muted" : "ag-section-surface",
+        bordered && "border-y border-[var(--ag-outline)]",
         className
       )}
     >

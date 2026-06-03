@@ -48,16 +48,16 @@ export default function AgProductTabs() {
         <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[var(--ag-text-tertiary)]">
           Product
         </p>
-        <h2 className="font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-white">
+        <h2 className="text-3xl font-bold tracking-tight text-[var(--ag-on-surface)]">
           Built for finance ops, for the agent-first era
         </h2>
-        <p className="mt-4 max-w-2xl text-[var(--ag-text-secondary)]">
+        <p className="mt-4 max-w-2xl text-[var(--ag-on-surface-variant)]">
           DocuExtract is built for teams who need trust — whether you process hundreds of invoices
           or thousands across global entities.
         </p>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2 border-b border-[var(--ag-border)]">
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-[var(--ag-outline)]">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -65,8 +65,8 @@ export default function AgProductTabs() {
             onClick={() => setActive(tab.key)}
             className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
               active === tab.key
-                ? "border-[var(--ag-primary-500)] text-white"
-                : "border-transparent text-[var(--ag-text-tertiary)] hover:text-white"
+                ? "border-[var(--ag-primary)] text-[var(--ag-on-surface)]"
+                : "border-transparent text-[var(--ag-text-tertiary)] hover:text-[var(--ag-on-surface)]"
             }`}
           >
             <tab.icon className="h-4 w-4" />
@@ -77,16 +77,14 @@ export default function AgProductTabs() {
 
       <AgGlassCard glow className="grid gap-8 p-8 md:grid-cols-2 md:items-center">
         <div>
-          <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-[var(--ag-gradient-surface)] border border-[var(--ag-border)]">
-            <Icon className="h-6 w-6 text-[var(--ag-primary-400)]" />
+          <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl border border-[var(--ag-outline)] bg-[var(--ag-surface-container-high)]">
+            <Icon className="h-6 w-6 text-[var(--ag-accent)]" />
           </div>
-          <h3 className="mb-3 font-[family-name:var(--font-display)] text-xl font-bold text-white">
-            {current.title}
-          </h3>
-          <p className="text-sm leading-relaxed text-[var(--ag-text-secondary)]">{current.body}</p>
+          <h3 className="mb-3 text-xl font-bold text-[var(--ag-on-surface)]">{current.title}</h3>
+          <p className="text-sm leading-relaxed text-[var(--ag-on-surface-variant)]">{current.body}</p>
         </div>
-        <div className="ag-card flex aspect-video items-center justify-center rounded-xl bg-[var(--ag-gradient-surface)]">
-          <Icon className="h-16 w-16 text-[var(--ag-primary-400)] opacity-40" />
+        <div className="flex aspect-video items-center justify-center rounded-xl border border-[var(--ag-outline)] bg-[var(--ag-surface-container)]">
+          <Icon className="h-16 w-16 text-[var(--ag-accent)] opacity-30" />
         </div>
       </AgGlassCard>
     </AgFadeIn>

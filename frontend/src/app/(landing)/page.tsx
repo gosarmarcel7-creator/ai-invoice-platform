@@ -23,67 +23,63 @@ const updates = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[var(--ag-surface-container)] pt-16">
       <AgHero />
 
-      <AgSection bordered>
+      <AgSection bordered tone="surface">
         <AgFadeIn className="text-center">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[var(--ag-text-tertiary)]">
             Trusted by finance teams
           </p>
-          <h2 className="mx-auto mb-12 max-w-2xl font-[family-name:var(--font-display)] text-3xl font-bold text-white">
+          <h2 className="mx-auto mb-12 max-w-2xl text-3xl font-bold tracking-tight text-[var(--ag-on-surface)]">
             Built for finance ops, for the agent-first era
           </h2>
         </AgFadeIn>
         <div className="grid grid-cols-2 gap-10 lg:grid-cols-4">
           {trustStats.map((s, i) => (
             <AgFadeIn key={s.label} delay={i * 0.06} className="text-center">
-              <p className="ag-gradient-text tabnum mb-1.5 font-[family-name:var(--font-display)] text-4xl font-bold">
-                {s.val}
-              </p>
-              <p className="text-sm text-[var(--ag-text-tertiary)]">{s.label}</p>
+              <p className="tabnum mb-1.5 text-4xl font-bold text-[var(--ag-on-surface)]">{s.val}</p>
+              <p className="text-sm text-[var(--ag-on-surface-variant)]">{s.label}</p>
             </AgFadeIn>
           ))}
         </div>
       </AgSection>
 
-      <AgSection id="workflow">
+      <AgSection id="workflow" tone="muted">
         <AgVideoCarousel />
       </AgSection>
 
-      <AgSection id="product">
+      <AgSection id="product" tone="surface">
         <AgProductTabs />
       </AgSection>
 
-      <AgSection>
+      <AgSection tone="muted">
         <AgFadeIn className="mb-10 text-center">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[var(--ag-text-tertiary)]">
             Get started
           </p>
-          <h2 className="font-[family-name:var(--font-display)] text-3xl font-bold text-white">
-            Available at no charge
-          </h2>
+          <h2 className="text-3xl font-bold text-[var(--ag-on-surface)]">Available at no charge</h2>
         </AgFadeIn>
         <AgCtaBand />
       </AgSection>
 
-      <AgSection id="updates" bordered>
+      <AgSection id="updates" bordered tone="surface">
         <AgFadeIn className="mb-10">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[var(--ag-text-tertiary)]">
             Product updates
           </p>
-          <h2 className="font-[family-name:var(--font-display)] text-3xl font-bold text-white">
-            Latest from DocuExtract
-          </h2>
+          <h2 className="text-3xl font-bold text-[var(--ag-on-surface)]">Latest from DocuExtract</h2>
         </AgFadeIn>
         <div className="grid gap-4 md:grid-cols-3">
           {updates.map((post, i) => (
             <AgFadeIn key={post.title} delay={i * 0.06}>
-              <AgGlassCard className="group flex h-full flex-col p-6 transition-colors hover:border-[var(--ag-border-glow)]">
-                <span className="mb-2 text-xs font-semibold text-[var(--ag-primary-400)]">{post.tag}</span>
-                <h3 className="mb-2 font-bold text-white group-hover:text-[var(--ag-violet-400)]">{post.title}</h3>
+              <AgGlassCard className="group flex h-full flex-col p-6 transition-shadow hover:shadow-md">
+                <span className="ag-link mb-2 text-xs font-semibold">{post.tag}</span>
+                <h3 className="mb-2 font-bold text-[var(--ag-on-surface)] group-hover:text-[var(--ag-accent)]">
+                  {post.title}
+                </h3>
                 <p className="mt-auto text-xs text-[var(--ag-text-tertiary)]">{post.date}</p>
-                <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--ag-text-secondary)]">
+                <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--ag-on-surface-variant)]">
                   Read update <ArrowRight className="h-3 w-3" />
                 </span>
               </AgGlassCard>
@@ -92,12 +88,12 @@ export default function LandingPage() {
         </div>
       </AgSection>
 
-      <AgSection className="py-28">
+      <AgSection tone="muted" className="py-28">
         <AgFadeIn className="mx-auto max-w-2xl text-center">
-          <h2 className="mb-4 font-[family-name:var(--font-display)] text-4xl font-bold text-white">
-            Start processing invoices <span className="ag-gradient-text">today.</span>
+          <h2 className="mb-4 text-4xl font-bold text-[var(--ag-on-surface)]">
+            Start processing invoices today.
           </h2>
-          <p className="mb-10 text-lg text-[var(--ag-text-secondary)]">
+          <p className="mb-10 text-lg text-[var(--ag-on-surface-variant)]">
             Join finance teams saving 10+ hours per week with AI-powered extraction.
           </p>
           <Link href="/dashboard" className="ag-btn-primary px-8 py-4 text-base">

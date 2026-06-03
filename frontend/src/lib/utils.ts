@@ -38,14 +38,14 @@ export function timeAgo(dateStr: string): string {
 export function statusConfig(status: string) {
   switch (status) {
     case "approved":
-      return { label: "Approved", dot: "ag-dot-approved", text: "text-emerald-300", bg: "ag-badge-approved", border: "border-emerald-500/30" };
+      return { label: "Approved", dot: "ag-dot-approved", text: "text-emerald-800", bg: "ag-badge-approved", border: "border-emerald-200" };
     case "review":
-      return { label: "Needs Review", dot: "ag-dot-review", text: "text-amber-300", bg: "ag-badge-review", border: "border-amber-500/30" };
+      return { label: "Needs Review", dot: "ag-dot-review", text: "text-amber-900", bg: "ag-badge-review", border: "border-amber-200" };
     case "processing":
-      return { label: "Processing", dot: "ag-dot-processing", text: "text-sky-300", bg: "ag-badge-processing", border: "border-sky-500/30" };
+      return { label: "Processing", dot: "ag-dot-processing", text: "text-sky-800", bg: "ag-badge-processing", border: "border-sky-200" };
     case "rejected":
-      return { label: "Rejected", dot: "ag-dot-rejected", text: "text-rose-300", bg: "ag-badge-rejected", border: "border-rose-500/30" };
+      return { label: "Rejected", dot: "ag-dot-rejected", text: "text-rose-800", bg: "ag-badge-rejected", border: "border-rose-200" };
     default:
-      return { label: status, dot: "ag-dot-default", text: "text-slate-300", bg: "ag-badge-default", border: "border-white/15" };
+      return { label: status, dot: "ag-dot-default", text: "text-slate-700", bg: "ag-badge-default", border: "border-slate-200" };
   }
 }

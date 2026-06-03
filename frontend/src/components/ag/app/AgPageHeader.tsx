@@ -18,9 +18,7 @@ export default function AgPageHeader({
       className="flex flex-wrap items-center justify-between gap-4"
     >
       <div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-white">
-          {title}
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight text-[var(--ag-on-surface)]">{title}</h1>
         {subtitle && <p className="mt-0.5 text-sm text-[var(--ag-text-tertiary)]">{subtitle}</p>}
       </div>
       {actions && <div className="flex gap-2.5">{actions}</div>}

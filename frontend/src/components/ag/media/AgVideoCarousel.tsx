@@ -26,24 +26,22 @@ export default function AgVideoCarousel() {
         <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[var(--ag-text-tertiary)]">
           See it in action
         </p>
-        <h2 className="font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-white">
+        <h2 className="text-3xl font-bold tracking-tight text-[var(--ag-on-surface)]">
           From upload to approval
         </h2>
       </div>
 
       <AgGlassCard glow className="relative overflow-hidden">
-        <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-[rgba(139,92,246,0.15)] to-[rgba(6,182,212,0.08)]">
+        <div className="flex aspect-video items-center justify-center bg-[var(--ag-surface-container-high)]">
           <div className="text-center">
             <AgPlayButton />
-            <p className="mt-6 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
-              {slide.title}
-            </p>
-            <p className="mt-1 text-sm text-[var(--ag-text-tertiary)]">{slide.subtitle}</p>
-            <p className="mt-4 text-xs font-bold text-[var(--ag-primary-400)]">Step {slide.step}</p>
+            <p className="mt-6 text-2xl font-bold text-[var(--ag-on-surface)]">{slide.title}</p>
+            <p className="mt-1 text-sm text-[var(--ag-on-surface-variant)]">{slide.subtitle}</p>
+            <p className="mt-4 text-xs font-bold text-[var(--ag-accent)]">Step {slide.step}</p>
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-[var(--ag-border)] px-4 py-3">
+        <div className="flex items-center justify-between border-t border-[var(--ag-outline)] px-4 py-3">
           <button type="button" onClick={prev} className="ag-btn-secondary px-2.5 py-2" aria-label="Previous">
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -53,7 +51,9 @@ export default function AgVideoCarousel() {
                 key={i}
                 type="button"
                 onClick={() => setIndex(i)}
-                className={`h-1.5 rounded-full transition-all ${i === index ? "w-6 bg-[var(--ag-primary-500)]" : "w-1.5 bg-white/20"}`}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === index ? "w-6 bg-[var(--ag-primary)]" : "w-1.5 bg-[var(--ag-outline-strong)]"
+                }`}
                 aria-label={`Slide ${i + 1}`}
               />
             ))}

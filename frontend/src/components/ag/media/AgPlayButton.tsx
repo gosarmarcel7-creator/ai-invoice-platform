@@ -7,10 +7,10 @@ export default function AgPlayButton({ onClick }: { onClick?: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="group grid h-14 w-14 place-items-center rounded-full border border-white/20 bg-white/10 backdrop-blur-md transition-all hover:scale-105 hover:border-[var(--ag-primary-500)] hover:bg-[var(--ag-primary-500)]/20"
+      className="group grid h-14 w-14 place-items-center rounded-full border border-[var(--ag-outline-strong)] bg-[var(--ag-surface)] shadow-sm transition-all hover:scale-105 hover:border-[var(--ag-accent)]"
       aria-label="Play video"
     >
-      <Play className="h-6 w-6 fill-white text-white transition-transform group-hover:scale-110" />
+      <Play className="h-6 w-6 fill-[var(--ag-on-surface)] text-[var(--ag-on-surface)] transition-transform group-hover:scale-110" />
     </button>
   );
 }

@@ -145,7 +145,7 @@ export default function ReviewQueuePage() {
                 setPage(1);
               }}
               className={`-mb-px whitespace-nowrap border-b-2 px-4 py-2 text-sm font-semibold ${
-                tab === t.key ? "border-[var(--ag-primary-500)] text-white" : "border-transparent text-[var(--ag-text-tertiary)]"
+                tab === t.key ? "border-[var(--ag-primary)] text-[var(--ag-on-surface)]" : "border-transparent text-[var(--ag-text-tertiary)]"
               }`}
             >
               {t.label}
@@ -199,7 +199,7 @@ export default function ReviewQueuePage() {
                 <tr>
                   <th className="w-10">
                     <button type="button" onClick={toggleAll}>
-                      {allSelected ? <CheckSquare className="h-4 w-4 text-[var(--ag-primary-400)]" /> : <Square className="h-4 w-4" />}
+                      {allSelected ? <CheckSquare className="h-4 w-4 text-[var(--ag-accent)]" /> : <Square className="h-4 w-4" />}
                     </button>
                   </th>
                   <th>Document</th>
@@ -219,15 +219,15 @@ export default function ReviewQueuePage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className={selected.has(inv.id) ? "bg-[var(--ag-primary-500)]/10" : ""}
+                      className={selected.has(inv.id) ? "bg-[var(--ag-primary)]/10" : ""}
                     >
                       <td>
                         <button type="button" onClick={() => toggleSelect(inv.id)}>
-                          {selected.has(inv.id) ? <CheckSquare className="h-4 w-4 text-[var(--ag-primary-400)]" /> : <Square className="h-4 w-4" />}
+                          {selected.has(inv.id) ? <CheckSquare className="h-4 w-4 text-[var(--ag-accent)]" /> : <Square className="h-4 w-4" />}
                         </button>
                       </td>
                       <td>
-                        <p className="max-w-[160px] truncate text-sm font-medium text-white">{inv.filename}</p>
+                        <p className="max-w-[160px] truncate text-sm font-medium text-[var(--ag-on-surface)]">{inv.filename}</p>
                         <p className="text-xs text-[var(--ag-text-tertiary)]">{timeAgo(inv.uploaded_at)}</p>
                       </td>
                       <td className="hidden text-sm sm:table-cell">{inv.vendor_name || "—"}</td>

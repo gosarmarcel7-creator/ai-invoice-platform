@@ -22,7 +22,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${
-        checked ? "bg-[var(--ag-gradient-primary)]" : "bg-white/10"
+        checked ? "bg-[var(--ag-primary)]" : "bg-[var(--ag-surface-container-high)]"
       }`}
     >
       <span className={`pointer-events-none mt-0.5 inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${checked ? "translate-x-[1.125rem]" : "translate-x-0.5"}`} />
@@ -37,10 +37,10 @@ function SectionCard({ icon: Icon, title, description, children }: {
     <AgGlassCard className="p-6">
       <div className="mb-5 flex items-center gap-3 border-b border-[var(--ag-border)] pb-4">
         <div className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--ag-border)] bg-[var(--ag-gradient-surface)]">
-          <Icon className="h-4 w-4 text-[var(--ag-primary-400)]" />
+          <Icon className="h-4 w-4 text-[var(--ag-accent)]" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-white">{title}</h2>
+          <h2 className="text-sm font-bold text-[var(--ag-on-surface)]">{title}</h2>
           <p className="mt-0.5 text-xs text-[var(--ag-text-tertiary)]">{description}</p>
         </div>
       </div>
@@ -55,7 +55,7 @@ function ToggleRow({ label, sub, checked, onChange }: {
   return (
     <div className="flex items-center justify-between rounded-xl border border-[var(--ag-border)] bg-[var(--ag-surface-glass)] p-3.5">
       <div>
-        <p className="text-sm font-semibold text-white">{label}</p>
+        <p className="text-sm font-semibold text-[var(--ag-on-surface)]">{label}</p>
         <p className="mt-0.5 text-xs text-[var(--ag-text-tertiary)]">{sub}</p>
       </div>
       <Toggle checked={checked} onChange={onChange} />

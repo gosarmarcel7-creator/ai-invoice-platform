@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import AgGlassCard from "@/components/ag/cards/AgGlassCard";
 
@@ -45,21 +45,23 @@ export default function LoginPage() {
 
   return (
     <motion.div
-      className="w-full max-w-sm"
+      className="relative z-10 w-full max-w-sm"
       initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <div className="mb-8 flex flex-col items-center">
-        <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--ag-gradient-primary)] shadow-[var(--ag-shadow-glow)]">
-          <Sparkles className="h-6 w-6 text-white" />
+        <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--ag-accent)]">
+          <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="currentColor" aria-hidden>
+            <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
+          </svg>
         </div>
-        <h1 className="font-[family-name:var(--font-display)] text-xl font-bold text-white">DocuExtract</h1>
+        <h1 className="text-xl font-bold text-[var(--ag-on-surface)]">DocuExtract</h1>
         <p className="mt-0.5 text-sm text-[var(--ag-text-tertiary)]">AI-powered invoice processing</p>
       </div>
 
       <AgGlassCard glow className="p-6">
-        <div className="mb-6 flex gap-1 rounded-xl border border-[var(--ag-border)] bg-[var(--ag-surface-glass)] p-1">
+        <div className="mb-6 flex gap-1 rounded-xl border border-[var(--ag-outline)] bg-[var(--ag-surface-container)] p-1">
           {(["signin", "signup"] as const).map((m) => (
             <button
               key={m}
@@ -67,8 +69,8 @@ export default function LoginPage() {
               onClick={() => { setMode(m); setError(null); setSuccess(null); }}
               className={`flex-1 rounded-lg py-1.5 text-sm font-semibold transition-all ${
                 mode === m
-                  ? "bg-[var(--ag-gradient-primary)] text-white"
-                  : "text-[var(--ag-text-tertiary)] hover:text-white"
+                  ? "bg-[var(--ag-primary)] text-white"
+                  : "text-[var(--ag-text-tertiary)] hover:text-[var(--ag-on-surface)]"
               }`}
             >
               {m === "signin" ? "Sign in" : "Sign up"}
@@ -78,7 +80,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-[var(--ag-text-secondary)]">
+            <label className="mb-1.5 block text-xs font-semibold text-[var(--ag-on-surface-variant)]">
               Email address
             </label>
             <input
@@ -92,7 +94,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-[var(--ag-text-secondary)]">
+            <label className="mb-1.5 block text-xs font-semibold text-[var(--ag-on-surface-variant)]">
               Password
             </label>
             <div className="relative">
@@ -108,7 +110,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPw((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ag-text-tertiary)] hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ag-text-tertiary)] hover:text-[var(--ag-on-surface)]"
               >
                 {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -116,12 +118,12 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
+            <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800">
               {error}
             </p>
           )}
           {success && (
-            <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
               {success}
             </p>
           )}
@@ -144,7 +146,7 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(null); }}
-          className="font-semibold text-white hover:text-[var(--ag-violet-400)]"
+          className="ag-link"
         >
           {mode === "signin" ? "Sign up" : "Sign in"}
         </button>

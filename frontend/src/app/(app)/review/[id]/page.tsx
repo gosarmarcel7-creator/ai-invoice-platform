@@ -67,7 +67,7 @@ export default function ReviewDetailPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-[var(--ag-primary-400)]" />
+        <Loader2 className="h-6 w-6 animate-spin text-[var(--ag-accent)]" />
       </div>
     );
   }
@@ -144,7 +144,7 @@ export default function ReviewDetailPage() {
           </button>
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="max-w-sm truncate font-[family-name:var(--font-display)] text-xl font-bold text-white">
+              <h1 className="max-w-sm truncate font-[family-name:var(--font-display)] text-xl font-bold text-[var(--ag-on-surface)]">
                 {invoice?.filename}
               </h1>
               <AgStatusBadge status={form.status} />
@@ -195,8 +195,8 @@ export default function ReviewDetailPage() {
         <AgGlassCard className="flex min-h-[560px] flex-col overflow-hidden">
           <div className="flex items-center justify-between border-b border-[var(--ag-border)] px-5 py-3.5">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[var(--ag-primary-400)]" />
-              <span className="text-sm font-semibold text-white">AI Extracted Data</span>
+              <Sparkles className="h-4 w-4 text-[var(--ag-accent)]" />
+              <span className="text-sm font-semibold text-[var(--ag-on-surface)]">AI Extracted Data</span>
             </div>
             <ConfidenceBadge score={invoice?.confidence_score ?? null} />
           </div>
@@ -240,7 +240,7 @@ export default function ReviewDetailPage() {
               <div className="mb-2 flex items-center justify-between">
                 <Label>Line Items</Label>
                 {!isReadOnly && (
-                  <button type="button" onClick={addLineItem} className="text-xs font-semibold text-[var(--ag-primary-400)]">
+                  <button type="button" onClick={addLineItem} className="text-xs font-semibold text-[var(--ag-accent)]">
                     <Plus className="inline h-3.5 w-3.5" /> Add row
                   </button>
                 )}
@@ -260,13 +260,13 @@ export default function ReviewDetailPage() {
                     {(form.line_items ?? []).map((item, i) => (
                       <tr key={i}>
                         <td className="px-2 py-2">
-                          <input className="w-full bg-transparent text-white outline-none" value={item.description ?? ""} onChange={(e) => setLineItem(i, "description", e.target.value)} disabled={isReadOnly} />
+                          <input className="w-full bg-transparent text-[var(--ag-on-surface)] outline-none" value={item.description ?? ""} onChange={(e) => setLineItem(i, "description", e.target.value)} disabled={isReadOnly} />
                         </td>
                         <td className="px-2 py-2">
-                          <input className="w-full bg-transparent text-white outline-none" type="number" value={item.quantity ?? ""} onChange={(e) => setLineItem(i, "quantity", parseFloat(e.target.value) || 0)} disabled={isReadOnly} />
+                          <input className="w-full bg-transparent text-[var(--ag-on-surface)] outline-none" type="number" value={item.quantity ?? ""} onChange={(e) => setLineItem(i, "quantity", parseFloat(e.target.value) || 0)} disabled={isReadOnly} />
                         </td>
                         <td className="px-2 py-2">
-                          <input className="w-full bg-transparent text-white outline-none" type="number" step="0.01" value={item.unit_price ?? ""} onChange={(e) => setLineItem(i, "unit_price", parseFloat(e.target.value) || 0)} disabled={isReadOnly} />
+                          <input className="w-full bg-transparent text-[var(--ag-on-surface)] outline-none" type="number" step="0.01" value={item.unit_price ?? ""} onChange={(e) => setLineItem(i, "unit_price", parseFloat(e.target.value) || 0)} disabled={isReadOnly} />
                         </td>
                         <td className="tabnum px-2 py-2 font-semibold">{formatCurrency(item.total_price)}</td>
                         {!isReadOnly && (
@@ -283,7 +283,7 @@ export default function ReviewDetailPage() {
                     <tfoot>
                       <tr className="border-t border-[var(--ag-border)] bg-[var(--ag-surface-glass)]">
                         <td colSpan={3} className="px-3 py-2 text-right text-xs font-bold uppercase text-[var(--ag-text-tertiary)]">Subtotal</td>
-                        <td className="tabnum px-2 py-2 font-black text-white">{formatCurrency(lineTotal)}</td>
+                        <td className="tabnum px-2 py-2 font-black text-[var(--ag-on-surface)]">{formatCurrency(lineTotal)}</td>
                         {!isReadOnly && <td />}
                       </tr>
                     </tfoot>
