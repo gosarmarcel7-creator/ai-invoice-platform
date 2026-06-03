@@ -1,0 +1,217 @@
+@import "tailwindcss";
+
+/*
+  Sift — design tokens
+  Dark, data-dense "operations" aesthetic. One confident indigo→violet accent,
+  semantic status colors mapped to invoice lifecycle, tabular mono numerals.
+*/
+
+@theme {
+  /* Surfaces (pure white, minimal) */
+  --color-base: #ffffff;
+  --color-base-2: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f4f5;
+  --color-elevated: #ffffff;
+
+  /* Hairlines (near-black on white) */
+  --color-line: rgba(10, 10, 10, 0.09);
+  --color-line-strong: rgba(10, 10, 10, 0.15);
+
+  /* Text (near-black on white) */
+  --color-ink: #0a0a0a;
+  --color-ink-soft: #3d3d42;
+  --color-ink-mute: #6b6b70;
+  --color-ink-faint: #a1a1aa;
+
+  /* Brand = near-black mono. brand-bright/iris/cyan repurposed as the green accent. */
+  --color-brand: #0a0a0a;
+  --color-brand-bright: #16a34a;
+  --color-brand-deep: #000000;
+  --color-iris: #15803d;
+  --color-cyan: #22c55e;
+
+  /* Signature accent (used sparingly) */
+  --color-accent: #16a34a;
+  --color-accent-bright: #22c55e;
+
+  /* Semantic status (invoice lifecycle) */
+  --color-processing: #64748b;
+  --color-review: #d97706;
+  --color-approved: #16a34a;
+  --color-rejected: #dc2626;
+
+  /* Fonts */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  /* Radii */
+  --radius-xl2: 1.375rem;
+
+  /* Easing + motion */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Animations */
+  --animate-marquee: marquee 38s linear infinite;
+  --animate-aurora: aurora 22s ease-in-out infinite;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-pulse-ring: pulse-ring 2.6s var(--ease-out-soft) infinite;
+  --animate-scan: scan 3.2s ease-in-out infinite;
+  --animate-spin-slow: spin 14s linear infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes aurora {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.55; }
+  33% { transform: translate3d(4%, -3%, 0) scale(1.12); opacity: 0.8; }
+  66% { transform: translate3d(-3%, 2%, 0) scale(0.95); opacity: 0.6; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.92); opacity: 0.7; }
+  70% { transform: scale(1.6); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes scan {
+  0%, 100% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  50% { transform: translateY(190px); }
+}
+
+/* ---------- Base ---------- */
+* {
+  border-color: var(--color-line);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv05", "cv11", "ss01";
+  letter-spacing: -0.011em;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 20%, transparent);
+  color: var(--color-ink);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 99px;
+  border: 3px solid var(--color-base);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-ink-faint); }
+
+/* Tabular numerals for data */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* ---------- Utilities ---------- */
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+@utility font-mono { font-family: var(--font-mono); }
+
+@utility text-balance { text-wrap: balance; }
+@utility text-pretty { text-wrap: pretty; }
+
+/* Solid near-black display text (kept name for compatibility) */
+@utility text-gradient {
+  color: var(--color-ink);
+}
+
+/* Signature accent text */
+@utility text-gradient-brand {
+  color: var(--color-accent);
+}
+
+/* Glass / elevated card (light) */
+@utility glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--color-line);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 28px -16px rgba(15, 23, 42, 0.16);
+}
+
+/* Hairline grid background */
+@utility grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(15,23,42,0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15,23,42,0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* Subtle film grain to kill the flat "AI" gradient look */
+@utility grain {
+  position: relative;
+}
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.02;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Focus ring */
+@utility focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-brand-bright);
+  outline-offset: 2px;
+}
+
+/* Glow */
+@utility glow-brand {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-brand) 30%, transparent), 0 24px 60px -24px color-mix(in oklab, var(--color-brand) 55%, transparent);
+}
+
+/* Animated conic border */
+@utility ring-conic {
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

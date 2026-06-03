@@ -1,0 +1,301 @@
+import { getSupabaseAdmin, getUserFromRequest } from "@/lib/supabase-admin";
+import type { Invoice, InvoiceStatus } from "@/lib/types";
+import { buildCsvRows, canRetryInvoice, validateExtractionResult } from "@/lib/invoice-workflow";
+import { extractInvoiceData } from "@/lib/mistral";
+
+type AuditAction =
+  | "uploaded"
+  | "processing_started"
+  | "processing_failed"
+  | "processing_retried"
+  | "extraction_completed"
+  | "review_saved"
+  | "approved"
+  | "rejected"
+  | "deleted"
+  | "bulk_updated"
+  | "exported";
+
+type EventType =
+  | "invoice.review"
+  | "invoice.approved"
+  | "invoice.rejected"
+  | "invoice.failed";
+
+export async function requireUser(req: Request) {
+  const token = getUserFromRequest(req);
+  if (!token) {
+    return { error: new Response(JSON.stringify({ error: "Not authenticated" }), { status: 401 }) };
+  }
+
+  const supabaseAdmin = getSupabaseAdmin();
+  const {
+    data: { user },
+    error,
+  } = await supabaseAdmin.auth.getUser(token);
+
+  if (error || !user) {
+    return { error: new Response(JSON.stringify({ error: "Invalid token" }), { status: 401 }) };
+  }
+
+  return { user, supabaseAdmin };
+}
+
+export async function processInvoiceExtraction(invoiceId: number, text: string, userId: string) {
+  const supabaseAdmin = getSupabaseAdmin();
+
+  try {
+    const extracted = await extractInvoiceData(text);
+    const validated = validateExtractionResult(extracted);
+
+    if (!validated.ok) {
+      await markInvoiceFailed({
+        invoiceId,
+        userId,
+        message: validated.error,
+      });
+      return;
+    }
+
+    const { data, attentionReasons, needsAttention } = validated;
+
+    await supabaseAdmin
+      .from("invoices")
+      .update({
+        vendor_name: data.vendor_name,
+        invoice_number: data.invoice_number,
+        total_amount: data.total_amount,
+        date: data.date,
+        due_date: data.due_date,
+        confidence_score: data.confidence_score,
+        status: "review",
+        needs_attention: needsAttention,
+        attention_reasons: attentionReasons,
+        last_error: null,
+        processed_at: new Date().toISOString(),
+      })
+      .eq("id", invoiceId)
+      .eq("user_id", userId);
+
+    await supabaseAdmin.from("line_items").delete().eq("invoice_id", invoiceId);
+    if (data.line_items.length > 0) {
+      await supabaseAdmin.from("line_items").insert(
+        data.line_items.map((item) => ({
+          invoice_id: invoiceId,
+          description: item.description ?? null,
+          quantity: item.quantity ?? null,
+          unit_price: item.unit_price ?? null,
+          total_price: item.total_price ?? null,
+        }))
+      );
+    }
+
+    await safeAudit({
+      invoiceId,
+      userId,
+      action: "extraction_completed",
+      fromStatus: "processing",
+      toStatus: "review",
+      details: { needsAttention, attentionReasons },
+    });
+
+    await safeOutbox({
+      invoiceId,
+      eventType: "invoice.review",
+      payload: {
+        invoice_id: invoiceId,
+        user_id: userId,
+        status: "review",
+        needs_attention: needsAttention,
+        attention_reasons: attentionReasons,
+      },
+    });
+  } catch (error) {
+    await markInvoiceFailed({
+      invoiceId,
+      userId,
+      message: error instanceof Error ? error.message : "Invoice extraction failed.",
+    });
+  }
+}
+
+async function markInvoiceFailed({
+  invoiceId,
+  userId,
+  message,
+}: {
+  invoiceId: number;
+  userId: string;
+  message: string;
+}) {
+  const supabaseAdmin = getSupabaseAdmin();
+  await supabaseAdmin
+    .from("invoices")
+    .update({
+      status: "failed",
+      last_error: message,
+      processed_at: new Date().toISOString(),
+      needs_attention: true,
+      attention_reasons: ["empty_extraction"],
+    })
+    .eq("id", invoiceId)
+    .eq("user_id", userId);
+
+  await safeAudit({
+    invoiceId,
+    userId,
+    action: "processing_failed",
+    fromStatus: "processing",
+    toStatus: "failed",
+    details: { error: message },
+  });
+
+  await safeOutbox({
+    invoiceId,
+    eventType: "invoice.failed",
+    payload: { invoice_id: invoiceId, user_id: userId, status: "failed", error: message },
+  });
+}
+
+export async function safeAudit({
+  invoiceId,
+  userId,
+  action,
+  fromStatus,
+  toStatus,
+  details,
+}: {
+  invoiceId: number;
+  userId: string | null;
+  action: AuditAction;
+  fromStatus?: InvoiceStatus | null;
+  toStatus?: InvoiceStatus | null;
+  details?: Record<string, unknown>;
+}) {
+  try {
+    await getSupabaseAdmin().from("invoice_audit_log").insert({
+      invoice_id: invoiceId,
+      user_id: userId,
+      action,
+      from_status: fromStatus ?? null,
+      to_status: toStatus ?? null,
+      details: details ?? null,
+    });
+  } catch (error) {
+    console.warn("Audit insert failed", error);
+  }
+}
+
+export async function safeOutbox({
+  invoiceId,
+  eventType,
+  payload,
+}: {
+  invoiceId: number;
+  eventType: EventType;
+  payload: Record<string, unknown>;
+}) {
+  try {
+    await getSupabaseAdmin().from("webhook_outbox").insert({
+      invoice_id: invoiceId,
+      event_type: eventType,
+      payload,
+      delivery_status: "pending",
+      delivery_attempts: 0,
+    });
+  } catch (error) {
+    console.warn("Webhook outbox insert failed", error);
+  }
+}
+
+export function buildCsvResponse(invoices: Invoice[]) {
+  const rows = buildCsvRows(invoices);
+  const headers = Object.keys(rows[0] ?? {
+    id: "",
+    filename: "",
+    vendor_name: "",
+    invoice_number: "",
+    total_amount: "",
+    date: "",
+    due_date: "",
+    confidence_score: "",
+    status: "",
+    needs_attention: "",
+    attention_reasons: "",
+    reviewed_at: "",
+    line_item_description: "",
+    line_item_quantity: "",
+    line_item_unit_price: "",
+    line_item_total_price: "",
+  });
+  const lines = [
+    headers.join(","),
+    ...rows.map((row) => headers.map((header) => escapeCsv(row[header as keyof typeof row])).join(",")),
+  ];
+
+  return lines.join("\n");
+}
+
+function escapeCsv(value: unknown) {
+  const stringValue = value == null ? "" : String(value);
+  if (/[",\n]/.test(stringValue)) {
+    return `"${stringValue.replaceAll('"', '""')}"`;
+  }
+  return stringValue;
+}
+
+export function getStatusAuditAction(status: InvoiceStatus): AuditAction {
+  if (status === "approved") return "approved";
+  if (status === "rejected") return "rejected";
+  return "review_saved";
+}
+
+export function getStatusEventType(status: InvoiceStatus): EventType | null {
+  if (status === "approved") return "invoice.approved";
+  if (status === "rejected") return "invoice.rejected";
+  if (status === "failed") return "invoice.failed";
+  if (status === "review") return "invoice.review";
+  return null;
+}
+
+export async function safeStatusSideEffects({
+  invoiceId,
+  userId,
+  fromStatus,
+  toStatus,
+  details,
+}: {
+  invoiceId: number;
+  userId: string;
+  fromStatus: InvoiceStatus;
+  toStatus: InvoiceStatus;
+  details?: Record<string, unknown>;
+}) {
+  await safeAudit({
+    invoiceId,
+    userId,
+    action: getStatusAuditAction(toStatus),
+    fromStatus,
+    toStatus,
+    details,
+  });
+
+  const eventType = getStatusEventType(toStatus);
+  if (eventType) {
+    await safeOutbox({
+      invoiceId,
+      eventType,
+      payload: {
+        invoice_id: invoiceId,
+        user_id: userId,
+        from_status: fromStatus,
+        status: toStatus,
+        ...details,
+      },
+    });
+  }
+}
+
+export function ensureRetryable(status: InvoiceStatus) {
+  return canRetryInvoice(status);
+}

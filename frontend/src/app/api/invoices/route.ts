@@ -1,6 +1,11 @@
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin, getUserFromRequest } from "@/lib/supabase-admin";
-import { extractInvoiceData } from "@/lib/mistral";
+import {
+  processInvoiceExtraction,
+  requireUser,
+  safeAudit,
+} from "@/lib/invoice-server";
+import { validateUpload } from "@/lib/invoice-workflow";
 
 async function extractText(buffer: Buffer, filename: string): Promise<string> {
   if (filename.toLowerCase().endsWith(".pdf")) {
@@ -15,48 +20,16 @@ async function extractText(buffer: Buffer, filename: string): Promise<string> {
   return buffer.toString("utf-8");
 }
 
-async function processInvoice(invoiceId: number, text: string) {
-  const supabaseAdmin = getSupabaseAdmin();
-  const extracted = await extractInvoiceData(text);
-  const lineItems = (extracted.line_items as Record<string, unknown>[]) ?? [];
-
-  await supabaseAdmin.from("invoices").update({
-    vendor_name: extracted.vendor_name ?? null,
-    invoice_number: extracted.invoice_number ?? null,
-    total_amount: extracted.total_amount ?? null,
-    date: extracted.date ?? null,
-    due_date: extracted.due_date ?? null,
-    confidence_score: extracted.confidence_score ?? null,
-    status: "review",
-  }).eq("id", invoiceId);
-
-  if (lineItems.length > 0) {
-    await supabaseAdmin.from("line_items").insert(
-      lineItems.map((item) => ({
-        invoice_id: invoiceId,
-        description: item.description ?? null,
-        quantity: item.quantity ?? null,
-        unit_price: item.unit_price ?? null,
-        total_price: item.total_price ?? null,
-      }))
-    );
-  }
-}
-
 export async function GET(req: NextRequest) {
-  const token = getUserFromRequest(req);
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  const supabaseAdmin = getSupabaseAdmin();
+  const auth = await requireUser(req);
+  if ("error" in auth) return auth.error;
+  const { user, supabaseAdmin } = auth;
 
   const url = req.nextUrl;
   const page = parseInt(url.searchParams.get("page") ?? "1");
   const limit = parseInt(url.searchParams.get("limit") ?? "20");
   const status = url.searchParams.get("status");
   const search = url.searchParams.get("search");
-
-  // Get user from token
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
   let query = supabaseAdmin
     .from("invoices")
@@ -86,30 +59,69 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const token = getUserFromRequest(req);
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  const supabaseAdmin = getSupabaseAdmin();
-
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const auth = await requireUser(req);
+  if ("error" in auth) return auth.error;
+  const { user, supabaseAdmin } = auth;
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+  const uploadValidation = validateUpload({
+    name: file.name,
+    type: file.type,
+    size: file.size,
+  });
+  if (!uploadValidation.ok) {
+    return NextResponse.json({ error: uploadValidation.error }, { status: 400 });
+  }
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const text = await extractText(buffer, file.name);
+  const fileHash = createHash("sha256").update(buffer).digest("hex");
+
+  const { data: duplicate } = await supabaseAdmin
+    .from("invoices")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("file_hash", fileHash)
+    .order("uploaded_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const { data: invoice, error } = await supabaseAdmin
     .from("invoices")
-    .insert({ filename: file.name, raw_text: text, user_id: user.id, status: "processing" })
+    .insert({
+      filename: file.name,
+      raw_text: text,
+      user_id: user.id,
+      status: "processing",
+      processing_started_at: new Date().toISOString(),
+      mime_type: uploadValidation.normalizedMimeType,
+      file_size_bytes: file.size,
+      file_hash: fileHash,
+      duplicate_of_invoice_id: duplicate?.id ?? null,
+      needs_attention: Boolean(duplicate?.id),
+      attention_reasons: duplicate?.id ? ["duplicate_upload"] : [],
+      retry_count: 0,
+    })
     .select("*, line_items(*)")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Process async (fire and forget)
-  processInvoice(invoice.id, text).catch(console.error);
+  await safeAudit({
+    invoiceId: invoice.id,
+    userId: user.id,
+    action: "uploaded",
+    toStatus: "processing",
+    details: {
+      mime_type: uploadValidation.normalizedMimeType,
+      file_size_bytes: file.size,
+      duplicate_of_invoice_id: duplicate?.id ?? null,
+    },
+  });
+
+  processInvoiceExtraction(invoice.id, text, user.id).catch(console.error);
 
   return NextResponse.json(invoice);
 }

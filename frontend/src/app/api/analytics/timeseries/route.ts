@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin, getUserFromRequest } from "@/lib/supabase-admin";
+import { requireUser } from "@/lib/invoice-server";
 
 export async function GET(req: NextRequest) {
-  const token = getUserFromRequest(req);
-  if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-
-  const supabaseAdmin = getSupabaseAdmin();
-  const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-  if (!user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  const auth = await requireUser(req);
+  if ("error" in auth) return auth.error;
+  const { user, supabaseAdmin } = auth;
 
   const today = new Date();
   const yearStart = new Date(today.getFullYear(), 0, 1).toISOString();
