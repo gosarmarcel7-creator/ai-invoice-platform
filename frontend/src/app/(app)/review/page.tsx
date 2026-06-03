@@ -11,6 +11,7 @@ import {
 import { api, type PaginatedInvoices, type Invoice } from "@/lib/api";
 import { formatCurrency, formatDate, statusConfig, timeAgo } from "@/lib/utils";
 import { toast } from "sonner";
+import { HoverCard } from "@/components/TiltCard";
 
 const TABS = [
   { key: "all",        label: "All" },
@@ -19,6 +20,11 @@ const TABS = [
   { key: "approved",   label: "Approved" },
   { key: "rejected",   label: "Rejected" },
 ] as const;
+
+const fade = { 
+  initial: { opacity: 0, y: 14 }, 
+  animate: { opacity: 1, y: 0 } 
+};
 
 function StatusBadge({ status }: { status: string }) {
   const s = statusConfig(status);
@@ -119,10 +125,15 @@ export default function ReviewQueuePage() {
 
   return (
     <div className="w-full space-y-5">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <motion.div {...fade} className="flex items-center justify-between">
         <div>
-          <h1 className="font-[var(--font-display)] text-2xl font-bold tracking-tight text-white">Review Queue</h1>
-          <p className="mt-0.5 text-sm text-[var(--text-3)]">Validate AI-extracted data before approval</p>
+          <h1 className="font-[var(--font-display)] text-2xl font-bold tracking-tight text-white">
+            Review Queue
+          </h1>
+          <p className="mt-0.5 text-sm text-[var(--ag-text-tertiary)]">
+            Validate AI-extracted data before approval
+          </p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => load(true)} disabled={refreshing} className="btn btn-secondary">
@@ -135,19 +146,20 @@ export default function ReviewQueuePage() {
             <Upload className="h-3.5 w-3.5" /> Upload
           </Link>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="card overflow-hidden">
-        {/* Tabs */}
-        <div className="flex items-center gap-0 overflow-x-auto border-b border-[var(--border)] px-4 pt-3">
+      {/* Main card */}
+      <HoverCard className="overflow-hidden">
+        {/* Tabs - Antigravity style */}
+        <div className="flex items-center gap-0 overflow-x-auto border-b border-[var(--ag-border)] px-4 pt-3">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => { setTab(t.key); setPage(1); }}
               className={`-mb-px whitespace-nowrap rounded-t-md border-b-2 px-4 py-2 text-sm font-semibold transition-all ${
                 tab === t.key
-                  ? "border-[var(--accent)] text-white"
-                  : "border-transparent text-[var(--text-3)] hover:text-white"
+                  ? "border-[var(--ag-primary-500)] text-white"
+                  : "border-transparent text-[var(--ag-text-tertiary)] hover:text-white"
               }`}
             >
               {t.label}
@@ -156,26 +168,28 @@ export default function ReviewQueuePage() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
-          <div className="relative max-w-xs flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-3)]" />
-            <input
-              type="text"
-              placeholder="Search vendor, filename, invoice #…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="field-input pl-8 text-sm"
-            />
+        <motion.div {...fade} transition={{ delay: 0.05 }}>
+          <div className="flex items-center justify-between gap-3 border-b border-[var(--ag-border)] px-4 py-3">
+            <div className="relative max-w-xs flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--ag-text-tertiary)]" />
+              <input
+                type="text"
+                placeholder="Search vendor, filename, invoice #…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="field-input pl-8 text-sm"
+              />
+            </div>
+            {selected.size > 0 && (
+              <button
+                onClick={bulkDelete}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-500/20"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete {selected.size}
+              </button>
+            )}
           </div>
-          {selected.size > 0 && (
-            <button
-              onClick={bulkDelete}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-500/20"
-            >
-              <Trash2 className="h-3.5 w-3.5" /> Delete {selected.size}
-            </button>
-          )}
-        </div>
+        </motion.div>
 
         {/* Table */}
         {loading ? (
@@ -190,138 +204,144 @@ export default function ReviewQueuePage() {
             ))}
           </div>
         ) : invoices.length === 0 ? (
-          <div className="py-20 text-center">
-            <FileText className="mx-auto mb-3 h-9 w-9 text-[var(--text-4)]" />
-            <p className="text-sm font-semibold text-[var(--text-2)]">
-              {search ? "No results found" : "Queue is empty"}
-            </p>
-            <p className="mt-1 text-xs text-[var(--text-3)]">
-              {search ? "Try a different search term." : "Upload invoices to begin processing."}
-            </p>
-            {!search && (
-              <Link href="/upload" className="btn btn-primary mt-5 inline-flex">
-                <Upload className="h-3.5 w-3.5" /> Upload Invoices
-              </Link>
-            )}
-          </div>
+          <motion.div {...fade} transition={{ delay: 0.1 }}>
+            <div className="py-20 text-center">
+              <FileText className="mx-auto mb-3 h-9 w-9 text-[var(--ag-text-disabled)]" />
+              <p className="text-sm font-semibold text-[var(--ag-text-secondary)]">
+                {search ? "No results found" : "Queue is empty"}
+              </p>
+              <p className="mt-1 text-xs text-[var(--ag-text-tertiary)]">
+                {search ? "Try a different search term." : "Upload invoices to begin processing."}
+              </p>
+              {!search && (
+                <Link href="/upload" className="btn btn-primary mt-5 inline-flex">
+                  <Upload className="h-3.5 w-3.5" /> Upload Invoices
+                </Link>
+              )}
+            </div>
+          </motion.div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="data-table w-full">
-              <thead>
-                <tr>
-                  <th className="w-10">
-                    <button onClick={toggleAll} className="text-[var(--text-3)] transition-colors hover:text-white">
-                      {allSelected
-                        ? <CheckSquare className="h-4 w-4 text-[var(--violet)]" />
-                        : <Square className="h-4 w-4" />}
-                    </button>
-                  </th>
-                  <th>Document</th>
-                  <th className="hidden sm:table-cell">Vendor</th>
-                  <th className="hidden md:table-cell">Invoice #</th>
-                  <th className="hidden text-right lg:table-cell">Amount</th>
-                  <th className="hidden xl:table-cell">Date</th>
-                  <th>Status</th>
-                  <th className="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <AnimatePresence mode="popLayout">
-                  {invoices.map((inv, i) => (
-                    <motion.tr
-                      key={inv.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ delay: i * 0.02 }}
-                      className={selected.has(inv.id) ? "bg-[var(--accent)]/10" : ""}
-                    >
-                      <td>
-                        <button onClick={() => toggleSelect(inv.id)} className="text-[var(--text-4)] transition-colors hover:text-white">
-                          {selected.has(inv.id)
-                            ? <CheckSquare className="h-4 w-4 text-[var(--violet)]" />
-                            : <Square className="h-4 w-4" />}
-                        </button>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2.5">
-                          <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[var(--border)] bg-white/5">
-                            <FileText className="h-3.5 w-3.5 text-[var(--text-2)]" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="max-w-[160px] truncate text-sm font-medium text-white">{inv.filename}</p>
-                            <p className="text-xs text-[var(--text-3)]">{timeAgo(inv.uploaded_at)}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="hidden text-sm text-[var(--text-2)] sm:table-cell">{inv.vendor_name || "—"}</td>
-                      <td className="hidden font-mono text-xs text-[var(--text-3)] md:table-cell">{inv.invoice_number || "—"}</td>
-                      <td className="tabnum hidden text-right text-sm font-semibold text-white lg:table-cell">{formatCurrency(inv.total_amount)}</td>
-                      <td className="hidden text-sm text-[var(--text-3)] xl:table-cell">{formatDate(inv.date)}</td>
-                      <td><StatusBadge status={inv.status} /></td>
-                      <td>
-                        <div className="flex items-center justify-end gap-1.5">
-                          {inv.status === "review" && (
-                            <Link
-                              href={`/review/${inv.id}`}
-                              className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-300 transition-colors hover:bg-amber-500/20"
-                            >
-                              Review <ArrowRight className="h-3 w-3" />
-                            </Link>
-                          )}
-                          {(inv.status === "approved" || inv.status === "rejected") && (
-                            <Link
-                              href={`/review/${inv.id}`}
-                              className="btn btn-secondary px-3 py-1.5 text-xs"
-                            >
-                              View
-                            </Link>
-                          )}
-                          <button
-                            onClick={(e) => del(inv.id, e)}
-                            disabled={deleting === inv.id}
-                            className="rounded-md p-1.5 text-[var(--text-4)] transition-all hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-50"
-                          >
-                            {deleting === inv.id
-                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              : <Trash2 className="h-3.5 w-3.5" />}
+          <motion.div {...fade} transition={{ delay: 0.15 }}>
+            <div className="overflow-x-auto">
+              <table className="data-table w-full">
+                <thead>
+                  <tr>
+                    <th className="w-10">
+                      <button onClick={toggleAll} className="text-[var(--ag-text-tertiary)] transition-colors hover:text-white">
+                        {allSelected
+                          ? <CheckSquare className="h-4 w-4 text-[var(--ag-primary-400)]" />
+                          : <Square className="h-4 w-4" />}
+                      </button>
+                    </th>
+                    <th>Document</th>
+                    <th className="hidden sm:table-cell">Vendor</th>
+                    <th className="hidden md:table-cell">Invoice #</th>
+                    <th className="hidden text-right lg:table-cell">Amount</th>
+                    <th className="hidden xl:table-cell">Date</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <AnimatePresence mode="popLayout">
+                    {invoices.map((inv, i) => (
+                      <motion.tr
+                        key={inv.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ delay: i * 0.02 }}
+                        className={selected.has(inv.id) ? "bg-[var(--ag-primary-500)]/10" : ""}
+                      >
+                        <td>
+                          <button onClick={() => toggleSelect(inv.id)} className="text-[var(--ag-text-tertiary)] transition-colors hover:text-white">
+                            {selected.has(inv.id)
+                              ? <CheckSquare className="h-4 w-4 text-[var(--ag-primary-400)]" />
+                              : <Square className="h-4 w-4" />}
                           </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2.5">
+                            <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-[var(--ag-border)] bg-[var(--ag-surface-glass)]">
+                              <FileText className="h-3.5 w-3.5 text-[var(--ag-text-tertiary)]" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="max-w-[160px] truncate text-sm font-medium text-white">{inv.filename}</p>
+                              <p className="text-xs text-[var(--ag-text-tertiary)]">{timeAgo(inv.uploaded_at)}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="hidden text-sm text-[var(--ag-text-secondary)] sm:table-cell">{inv.vendor_name || "—"}</td>
+                        <td className="hidden font-mono text-xs text-[var(--ag-text-tertiary)] md:table-cell">{inv.invoice_number || "—"}</td>
+                        <td className="tabnum hidden text-right text-sm font-semibold text-white lg:table-cell">{formatCurrency(inv.total_amount)}</td>
+                        <td className="hidden text-sm text-[var(--ag-text-tertiary)] xl:table-cell">{formatDate(inv.date)}</td>
+                        <td><StatusBadge status={inv.status} /></td>
+                        <td>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {inv.status === "review" && (
+                              <Link
+                                href={`/review/${inv.id}`}
+                                className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-300 transition-colors hover:bg-amber-500/20"
+                              >
+                                Review <ArrowRight className="h-3 w-3" />
+                              </Link>
+                            )}
+                            {(inv.status === "approved" || inv.status === "rejected") && (
+                              <Link
+                                href={`/review/${inv.id}`}
+                                className="btn btn-secondary px-3 py-1.5 text-xs"
+                              >
+                                View
+                              </Link>
+                            )}
+                            <button
+                              onClick={(e) => del(inv.id, e)}
+                              disabled={deleting === inv.id}
+                              className="rounded-md p-1.5 text-[var(--ag-text-tertiary)] transition-all hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-50"
+                            >
+                              {deleting === inv.id
+                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                : <Trash2 className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
         )}
 
         {/* Pagination */}
         {data && data.pages > 1 && (
-          <div className="flex items-center justify-between border-t border-[var(--border)] px-5 py-3.5">
-            <p className="text-xs text-[var(--text-3)]">
-              {(page - 1) * 15 + 1}–{Math.min(page * 15, data.total)} of {data.total}
-            </p>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="btn btn-secondary px-2.5 py-1.5 text-xs disabled:opacity-40"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </button>
-              <span className="px-2 text-sm font-semibold text-[var(--text-2)]">{page} / {data.pages}</span>
-              <button
-                onClick={() => setPage((p) => Math.min(data.pages, p + 1))}
-                disabled={page === data.pages}
-                className="btn btn-secondary px-2.5 py-1.5 text-xs disabled:opacity-40"
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
+          <motion.div {...fade} transition={{ delay: 0.2 }}>
+            <div className="flex items-center justify-between border-t border-[var(--ag-border)] px-5 py-3.5">
+              <p className="text-xs text-[var(--ag-text-tertiary)]">
+                {(page - 1) * 15 + 1}–{Math.min(page * 15, data.total)} of {data.total}
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="btn btn-secondary px-2.5 py-1.5 text-xs disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <span className="px-2 text-sm font-semibold text-[var(--ag-text-secondary)]">{page} / {data.pages}</span>
+                <button
+                  onClick={() => setPage((p) => Math.min(data.pages, p + 1))}
+                  disabled={page === data.pages}
+                  className="btn btn-secondary px-2.5 py-1.5 text-xs disabled:opacity-40"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </HoverCard>
     </div>
   );
 }

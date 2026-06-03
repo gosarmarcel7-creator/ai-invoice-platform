@@ -50,19 +50,31 @@ function Sidebar() {
   };
 
   return (
-    <aside className="sidebar-bg sticky top-0 flex h-screen w-56 shrink-0 flex-col">
-      {/* Logo */}
-      <div className="flex h-16 items-center border-b border-[var(--border)] px-4">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="relative grid h-8 w-8 place-items-center rounded-xl bg-[var(--grad)] shadow-[0_0_18px_-2px_rgba(124,108,255,0.8)]">
-            <Sparkles className="h-4 w-4 text-white" />
+    <aside className="sidebar-bg sticky top-0 flex h-screen w-60 shrink-0 flex-col">
+      {/* Logo - Antigravity style */}
+      <div className="flex h-18 items-center border-b border-[var(--ag-border)] px-5">
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="relative grid h-10 w-10 place-items-center rounded-2xl bg-[var(--ag-gradient-primary)] shadow-[0_0_24px_-4px_rgba(139,92,246,0.9)]">
+            {/* Glow effect */}
+            <div className="absolute inset-0 rounded-2xl bg-[var(--ag-gradient-primary)] opacity-60 blur-xl" />
+            <Sparkles className="relative h-5 w-5 text-white" />
           </div>
-          <span className="font-[var(--font-display)] text-[15px] font-bold tracking-tight text-white">DocuExtract</span>
+          <div className="flex flex-col">
+            <span className="font-[var(--font-display)] text-[16px] font-bold tracking-tight text-white">
+              DocuExtract
+            </span>
+            <span className="text-[10px] text-[var(--ag-text-tertiary)] -mt-0.5 hidden md:block">
+              AI Platform
+            </span>
+          </div>
         </Link>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+      {/* Nav - Antigravity style */}
+      <nav className="flex-1 space-y-1.5 overflow-y-auto p-4">
+        <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--ag-text-tertiary)]">
+          Navigation
+        </p>
         {navLinks.map((link) => {
           const isActive =
             pathname === link.href ||
@@ -71,26 +83,37 @@ function Sidebar() {
             <Link
               key={link.href}
               href={link.href}
-              className={cn("nav-link", isActive && "nav-link-active")}
+              className={cn("nav-link group", isActive && "nav-link-active")}
             >
-              <link.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-white" : "text-[var(--text-3)]")} />
+              <div className="relative">
+                <link.icon className={cn(
+                  "h-5 w-5 shrink-0 transition-colors",
+                  isActive ? "text-[var(--ag-primary-400)]" : "text-[var(--ag-text-tertiary)]"
+                )} />
+                {isActive && (
+                  <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-[var(--ag-gradient-primary)] blur-lg opacity-60" />
+                )}
+              </div>
               <span className="flex-1 truncate">{link.label}</span>
+              {/* Hover indicator */}
+              <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-[var(--ag-primary-500)] opacity-0 transition-opacity group-hover:opacity-100" />
             </Link>
           );
         })}
       </nav>
 
-      {/* User */}
-      <div className="border-t border-[var(--border)] p-3">
-        <div className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--grad)]">
-            <span className="text-xs font-black text-white">{userInitial}</span>
+      {/* User Card - Antigravity style */}
+      <div className="border-t border-[var(--ag-border)] p-4">
+        <div className="group flex items-center gap-3 rounded-2xl bg-[var(--ag-surface-glass)] p-3 border border-[var(--ag-border)] transition-all hover:border-[var(--ag-border-glow)]">
+          <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--ag-gradient-primary)] overflow-hidden">
+            <span className="text-sm font-black text-white">{userInitial}</span>
+            <div className="absolute inset-0 bg-[var(--ag-gradient-secondary)] opacity-40 blur-xl" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold leading-none text-white">
+            <p className="truncate text-sm font-semibold leading-none text-white">
               {userEmail ? userEmail.split("@")[0] : "Admin"}
             </p>
-            <p className="mt-0.5 truncate text-[11px] text-[var(--text-3)]">
+            <p className="mt-0.5 truncate text-[11px] text-[var(--ag-text-tertiary)]">
               {userEmail ?? "Enterprise Plan"}
             </p>
           </div>
@@ -98,9 +121,9 @@ function Sidebar() {
             <button
               onClick={handleLogout}
               title="Sign out"
-              className="shrink-0 rounded-lg p-1 text-[var(--text-3)] transition-colors hover:bg-white/5 hover:text-white"
+              className="shrink-0 rounded-lg p-1.5 text-[var(--ag-text-tertiary)] transition-all hover:bg-[var(--ag-surface-glass-strong)] hover:text-[var(--ag-primary-400)]"
             >
-              <LogOut className="h-3.5 w-3.5" />
+              <LogOut className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -114,7 +137,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="min-w-0 flex-1 overflow-auto">
-        <div className="w-full p-7">{children}</div>
+        <div className="w-full p-8">{children}</div>
       </main>
     </div>
   );
