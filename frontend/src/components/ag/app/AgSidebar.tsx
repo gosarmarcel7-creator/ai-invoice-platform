@@ -8,6 +8,7 @@ import {
   LayoutDashboard, Upload, ClipboardList,
   BarChart3, Settings, LogOut,
 } from "lucide-react";
+import AgLogo from "@/components/ag/brand/AgLogo";
 
 const navLinks = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -53,11 +54,7 @@ export default function AgSidebar() {
     <aside className="ag-sidebar sticky top-0 z-10 flex h-screen w-60 shrink-0 flex-col">
       <div className="flex h-[72px] items-center border-b border-[var(--ag-outline)] px-5">
         <Link href="/" className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--ag-accent)]">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="currentColor" aria-hidden>
-              <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
-            </svg>
-          </div>
+          <AgLogo size="lg" />
           <div>
             <span className="text-base font-bold text-[var(--ag-on-surface)]">DocuExtract</span>
             <span className="block text-[10px] text-[var(--ag-text-tertiary)]">AI Platform</span>

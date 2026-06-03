@@ -3,21 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, Menu, X } from "lucide-react";
+import AgLogo from "@/components/ag/brand/AgLogo";
+
 const links = [
   { label: "Product", href: "#product" },
   { label: "Workflow", href: "#workflow" },
   { label: "Updates", href: "#updates" },
 ];
-
-function LogoMark() {
-  return (
-    <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--ag-accent)]">
-      <svg viewBox="0 0 24 24" className="h-4 w-4 text-white" fill="currentColor" aria-hidden>
-        <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l5.5 3.4v6.8L12 18.8 6.5 15.4V7.6L12 4.2z" />
-      </svg>
-    </span>
-  );
-}
 
 export default function AgNavbar() {
   const [open, setOpen] = useState(false);
@@ -26,7 +18,7 @@ export default function AgNavbar() {
     <nav className="fixed inset-x-0 top-0 z-50 border-b border-[var(--ag-outline)] bg-[var(--ag-surface)]">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2.5">
-          <LogoMark />
+          <AgLogo />
           <span className="text-[15px] font-semibold tracking-tight text-[var(--ag-on-surface)]">
             DocuExtract
           </span>
@@ -78,6 +70,9 @@ export default function AgNavbar() {
               {item.label}
             </a>
           ))}
+          <Link href="/login" className="mt-2 block py-2 text-sm font-medium text-[var(--ag-on-surface-variant)]" onClick={() => setOpen(false)}>
+            Sign in
+          </Link>
           <Link href="/dashboard" className="ag-btn-primary mt-2 w-full" onClick={() => setOpen(false)}>
             Open App <ArrowRight className="h-3.5 w-3.5" />
           </Link>

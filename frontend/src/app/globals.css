@@ -180,6 +180,64 @@ body {
   background: var(--ag-accent-hover);
 }
 
+/* Hero (on black) — inverted contrast */
+.ag-btn-hero-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ag-primary);
+  background: #ffffff;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s var(--ag-ease), opacity 0.2s var(--ag-ease);
+}
+.ag-btn-hero-primary:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.ag-btn-hero-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.ag-btn-hero-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.ag-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--ag-accent);
+  transition: color 0.2s;
+}
+.ag-text-link:hover {
+  color: var(--ag-accent-hover);
+}
+
+.ag-anchor-section {
+  scroll-margin-top: 5.5rem;
+}
+
 .ag-chip {
   display: inline-flex;
   align-items: center;

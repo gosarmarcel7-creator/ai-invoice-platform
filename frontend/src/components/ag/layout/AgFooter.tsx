@@ -1,4 +1,19 @@
 import Link from "next/link";
+import AgLogo from "@/components/ag/brand/AgLogo";
+
+const productLinks = [
+  { label: "Extraction", href: "#product" },
+  { label: "Review", href: "#product" },
+  { label: "Analytics", href: "#product" },
+  { label: "API", href: "#product" },
+];
+
+const companyLinks = [
+  { label: "Privacy", href: "/login" },
+  { label: "Terms", href: "/login" },
+  { label: "Docs", href: "/dashboard" },
+  { label: "Contact", href: "mailto:support@docuextract.ai" },
+];
 
 export default function AgFooter() {
   return (
@@ -6,11 +21,7 @@ export default function AgFooter() {
       <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-4">
         <div className="md:col-span-2">
           <Link href="/" className="mb-4 flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--ag-accent)]">
-              <svg viewBox="0 0 24 24" className="h-4 w-4 text-white" fill="currentColor" aria-hidden>
-                <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
-              </svg>
-            </span>
+            <AgLogo size="sm" />
             <span className="font-semibold text-[var(--ag-on-surface)]">DocuExtract</span>
           </Link>
           <p className="max-w-sm text-sm leading-relaxed text-[var(--ag-on-surface-variant)]">
@@ -20,9 +31,11 @@ export default function AgFooter() {
         <div>
           <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--ag-text-tertiary)]">Product</p>
           <ul className="space-y-2 text-sm text-[var(--ag-on-surface-variant)]">
-            {["Extraction", "Review", "Analytics", "API"].map((l) => (
-              <li key={l}>
-                <a href="#product" className="hover:text-[var(--ag-on-surface)]">{l}</a>
+            {productLinks.map((item) => (
+              <li key={item.label}>
+                <a href={item.href} className="hover:text-[var(--ag-on-surface)]">
+                  {item.label}
+                </a>
               </li>
             ))}
           </ul>
@@ -30,9 +43,17 @@ export default function AgFooter() {
         <div>
           <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--ag-text-tertiary)]">Company</p>
           <ul className="space-y-2 text-sm text-[var(--ag-on-surface-variant)]">
-            {["Privacy", "Terms", "Docs", "Contact"].map((l) => (
-              <li key={l}>
-                <a href="#" className="hover:text-[var(--ag-on-surface)]">{l}</a>
+            {companyLinks.map((item) => (
+              <li key={item.label}>
+                {item.href.startsWith("mailto:") ? (
+                  <a href={item.href} className="hover:text-[var(--ag-on-surface)]">
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link href={item.href} className="hover:text-[var(--ag-on-surface)]">
+                    {item.label}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

@@ -44,7 +44,7 @@ export default function AgProductDemo() {
       <div className="flex" style={{ minHeight: 320 }}>
         <div className="flex w-36 shrink-0 flex-col border-r border-[var(--ag-outline)] bg-[var(--ag-surface-container)] p-3">
           <div className="mb-3 flex items-center gap-1.5 px-1.5 py-2">
-            <div className="grid h-5 w-5 place-items-center rounded bg-[var(--ag-primary)]">
+            <div className="grid h-5 w-5 place-items-center rounded bg-[var(--ag-primary)]" aria-hidden>
               <Sparkles className="h-3 w-3 text-white" />
             </div>
             <span className="text-xs font-bold text-[var(--ag-on-surface)]">DocuExtract</span>

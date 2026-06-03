@@ -15,6 +15,7 @@ const slides = [
 
 export default function AgVideoCarousel() {
   const [index, setIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
   const slide = slides[index];
 
   const prev = () => setIndex((i) => (i === 0 ? slides.length - 1 : i - 1));
@@ -34,15 +35,23 @@ export default function AgVideoCarousel() {
       <AgGlassCard glow className="relative overflow-hidden">
         <div className="flex aspect-video items-center justify-center bg-[var(--ag-surface-container-high)]">
           <div className="text-center">
-            <AgPlayButton />
+            <AgPlayButton
+              onClick={() => {
+                setPlaying(true);
+                next();
+              }}
+            />
+            {playing && (
+              <p className="mt-2 text-xs font-medium text-[var(--ag-accent)]">Walkthrough preview</p>
+            )}
             <p className="mt-6 text-2xl font-bold text-[var(--ag-on-surface)]">{slide.title}</p>
             <p className="mt-1 text-sm text-[var(--ag-on-surface-variant)]">{slide.subtitle}</p>
-            <p className="mt-4 text-xs font-bold text-[var(--ag-accent)]">Step {slide.step}</p>
+            <p className="mt-4 text-xs font-bold text-[var(--ag-on-surface-variant)]">Step {slide.step}</p>
           </div>
         </div>
 
         <div className="flex items-center justify-between border-t border-[var(--ag-outline)] px-4 py-3">
-          <button type="button" onClick={prev} className="ag-btn-secondary px-2.5 py-2" aria-label="Previous">
+          <button type="button" onClick={prev} className="ag-btn-secondary px-2.5 py-2" aria-label="Previous step">
             <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="flex gap-2">
@@ -54,11 +63,12 @@ export default function AgVideoCarousel() {
                 className={`h-1.5 rounded-full transition-all ${
                   i === index ? "w-6 bg-[var(--ag-primary)]" : "w-1.5 bg-[var(--ag-outline-strong)]"
                 }`}
-                aria-label={`Slide ${i + 1}`}
+                aria-label={`Go to step ${i + 1}`}
+                aria-current={i === index ? "step" : undefined}
               />
             ))}
           </div>
-          <button type="button" onClick={next} className="ag-btn-secondary px-2.5 py-2" aria-label="Next">
+          <button type="button" onClick={next} className="ag-btn-secondary px-2.5 py-2" aria-label="Next step">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>

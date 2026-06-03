@@ -16,14 +16,32 @@ const trustStats = [
 ];
 
 const updates = [
-  { date: "Jun 2026", title: "Bulk upload & async pipeline", tag: "Product" },
-  { date: "May 2026", title: "Analytics dashboard refresh", tag: "Product" },
-  { date: "Apr 2026", title: "Mistral extraction v2", tag: "Engine" },
+  {
+    date: "Jun 2026",
+    title: "Bulk upload & async pipeline",
+    tag: "Product",
+    href: "/upload",
+    blurb: "Process hundreds of invoices in parallel with a resilient upload queue.",
+  },
+  {
+    date: "May 2026",
+    title: "Analytics dashboard refresh",
+    tag: "Product",
+    href: "/analytics",
+    blurb: "Track volume, approval rates, and AP value with clearer pipeline charts.",
+  },
+  {
+    date: "Apr 2026",
+    title: "Mistral extraction v2",
+    tag: "Engine",
+    href: "/dashboard",
+    blurb: "Higher accuracy on line items, dates, and vendor fields across document types.",
+  },
 ];
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[var(--ag-surface-container)] pt-16">
+    <div className="min-h-screen bg-[var(--ag-surface-container)]">
       <AgHero />
 
       <AgSection bordered tone="surface">
@@ -73,16 +91,19 @@ export default function LandingPage() {
         <div className="grid gap-4 md:grid-cols-3">
           {updates.map((post, i) => (
             <AgFadeIn key={post.title} delay={i * 0.06}>
-              <AgGlassCard className="group flex h-full flex-col p-6 transition-shadow hover:shadow-md">
-                <span className="ag-link mb-2 text-xs font-semibold">{post.tag}</span>
-                <h3 className="mb-2 font-bold text-[var(--ag-on-surface)] group-hover:text-[var(--ag-accent)]">
-                  {post.title}
-                </h3>
-                <p className="mt-auto text-xs text-[var(--ag-text-tertiary)]">{post.date}</p>
-                <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--ag-on-surface-variant)]">
-                  Read update <ArrowRight className="h-3 w-3" />
-                </span>
-              </AgGlassCard>
+              <Link href={post.href} className="block h-full">
+                <AgGlassCard className="group flex h-full flex-col p-6 transition-shadow hover:shadow-md">
+                  <span className="mb-2 text-xs font-semibold text-[var(--ag-on-surface-variant)]">{post.tag}</span>
+                  <h3 className="mb-2 font-bold text-[var(--ag-on-surface)] group-hover:text-[var(--ag-accent)]">
+                    {post.title}
+                  </h3>
+                  <p className="mb-3 text-sm leading-relaxed text-[var(--ag-on-surface-variant)]">{post.blurb}</p>
+                  <p className="mt-auto text-xs text-[var(--ag-text-tertiary)]">{post.date}</p>
+                  <span className="ag-text-link mt-4 text-xs">
+                    Read more <ArrowRight className="h-3 w-3" />
+                  </span>
+                </AgGlassCard>
+              </Link>
             </AgFadeIn>
           ))}
         </div>

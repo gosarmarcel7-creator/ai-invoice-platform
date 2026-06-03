@@ -23,9 +23,9 @@ export default function AgHero() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden bg-black text-white">
+    <section className="relative -mt-16 overflow-hidden bg-black pt-16 text-white">
       <AgBackground variant="hero" />
-      <div className="relative px-6 pb-24 pt-32">
+      <div className="relative px-6 pb-24 pt-20">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 lg:grid-cols-2 xl:gap-20">
           <div>
             <motion.div
@@ -41,9 +41,9 @@ export default function AgHero() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.06 }}
-              className="mb-5 font-[family-name:var(--font-display)] text-5xl font-bold leading-[1.05] tracking-tight xl:text-[56px]"
+              className="mb-5 text-5xl font-bold leading-[1.05] tracking-tight xl:text-[56px]"
             >
-              <span className="text-white/90">AI invoice extraction,</span>
+              <span className="text-white">AI invoice extraction,</span>
               <br />
               <span className="inline-flex items-baseline gap-0">
                 <span className="text-[var(--ag-on-hero)]">{typed}</span>
@@ -71,13 +71,10 @@ export default function AgHero() {
               transition={{ duration: 0.5, delay: 0.18 }}
               className="mb-8 flex flex-wrap gap-3"
             >
-              <Link href="/dashboard" className="ag-btn-primary bg-white px-5 py-3 text-[15px] text-[var(--ag-primary)] hover:opacity-100">
+              <Link href="/dashboard" className="ag-btn-hero-primary px-5 py-3 text-[15px]">
                 Open Dashboard <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link
-                href="/upload"
-                className="ag-btn-secondary border-white/20 bg-transparent px-5 py-3 text-[15px] text-white hover:bg-white/10"
-              >
+              <Link href="/upload" className="ag-btn-hero-secondary px-5 py-3 text-[15px]">
                 Upload an Invoice
               </Link>
             </motion.div>

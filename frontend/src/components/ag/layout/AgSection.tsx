@@ -18,6 +18,7 @@ export default function AgSection({
       id={id}
       className={cn(
         "px-6 py-24",
+        id && "ag-anchor-section",
         tone === "muted" ? "ag-section-muted" : "ag-section-surface",
         bordered && "border-y border-[var(--ag-outline)]",
         className
