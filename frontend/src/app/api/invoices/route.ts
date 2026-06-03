@@ -17,7 +17,7 @@ async function extractText(buffer: Buffer, filename: string): Promise<string> {
 
 async function processInvoice(invoiceId: number, text: string) {
   const extracted = await extractInvoiceData(text);
-  const lineItems = (extracted.line_items as any[]) ?? [];
+  const lineItems = (extracted.line_items as Record<string, unknown>[]) ?? [];
 
   await supabaseAdmin.from("invoices").update({
     vendor_name: extracted.vendor_name ?? null,
@@ -31,7 +31,7 @@ async function processInvoice(invoiceId: number, text: string) {
 
   if (lineItems.length > 0) {
     await supabaseAdmin.from("line_items").insert(
-      lineItems.map((item: any) => ({
+      lineItems.map((item) => ({
         invoice_id: invoiceId,
         description: item.description ?? null,
         quantity: item.quantity ?? null,

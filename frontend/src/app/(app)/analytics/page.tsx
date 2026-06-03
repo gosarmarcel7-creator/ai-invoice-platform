@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { motion } from "framer-motion";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -12,68 +11,18 @@ import {
 } from "lucide-react";
 import { api, type Analytics, type Timeseries } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-import { HoverCard } from "@/components/TiltCard";
+import AgPageHeader from "@/components/ag/app/AgPageHeader";
+import AgStatTile from "@/components/ag/app/AgStatTile";
+import { AgDataTable, AgTableWrap } from "@/components/ag/app/AgDataTable";
+import { AgChartGradients, AgChartTip, CHART_AXIS, CHART_GRID, AgChartCard } from "@/components/ag/app/AgChart";
+import AgGlassCard from "@/components/ag/cards/AgGlassCard";
 
-const fade = { 
-  initial: { opacity: 0, y: 14 }, 
-  animate: { opacity: 1, y: 0 } 
-};
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`skeleton ${className}`} />;
-}
-
-// Antigravity accent colors
-const ACCENT: Record<string, string> = {
-  indigo: "from-[var(--ag-violet-400)] to-[var(--ag-primary-400)]",
-  green:  "from-[var(--ag-emerald-400)] to-[var(--ag-emerald-500)]",
-  amber:  "from-[var(--ag-amber-400)] to-[var(--ag-orange-400)]",
-  red:    "from-[var(--ag-rose-400)] to-[var(--ag-pink-400)]",
-  blue:   "from-[var(--ag-cyan-400)] to-[var(--ag-cyan-500)]",
-};
-
-// Antigravity status colors
 const STATUS_COLORS: Record<string, string> = {
-  approved:   "#34d399",
-  review:     "#fbbf24",
+  approved: "#34d399",
+  review: "#fbbf24",
   processing: "#38bdf8",
-  rejected:   "#fb7185",
+  rejected: "#fb7185",
 };
-
-function StatCard({ label, value, sub, icon: Icon, accent = "indigo", delay = 0 }: {
-  label: string; value: string | number; sub?: string;
-  icon: React.ElementType; accent?: string; delay?: number;
-}) {
-  return (
-    <motion.div
-      {...fade} transition={{ delay }}
-      className="card card-hover card-glow relative overflow-hidden p-5"
-    >
-      <div className="mb-3 flex items-start justify-between">
-        <p className="text-xs font-bold uppercase tracking-wider text-[var(--ag-text-tertiary)]">{label}</p>
-        <div className={`grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br ${ACCENT[accent] ?? ACCENT.indigo}`}>
-          <Icon className="h-4 w-4 text-white" />
-        </div>
-      </div>
-      <p className="tabnum font-[var(--font-display)] text-2xl font-bold text-white">{value}</p>
-      {sub && <p className="mt-1 text-xs text-[var(--ag-text-tertiary)]">{sub}</p>}
-    </motion.div>
-  );
-}
-
-function ChartTip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="glass rounded-xl px-3.5 py-2.5 text-xs shadow-xl">
-      <p className="mb-1 font-semibold text-white">{label}</p>
-      {payload.map((p: any) => (
-        <p key={p.dataKey} style={{ color: p.color }}>
-          {p.name ?? p.dataKey}: <span className="font-bold text-white">{p.value}</span>
-        </p>
-      ))}
-    </div>
-  );
-}
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -82,7 +31,8 @@ export default function AnalyticsPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true); else setRefreshing(true);
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
     try {
       const [aRes, tRes] = await Promise.all([
         api.get<Analytics>("/api/analytics"),
@@ -94,7 +44,9 @@ export default function AnalyticsPage() {
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    queueMicrotask(() => { void load(); });
+  }, [load]);
 
   const a = analytics ?? {
     total_documents: 0, processing: 0, awaiting_review: 0,
@@ -109,247 +61,152 @@ export default function AnalyticsPage() {
   }));
 
   const statusBreakdown = [
-    { name: "Approved",   value: a.approved,       color: STATUS_COLORS.approved },
-    { name: "Review",     value: a.awaiting_review, color: STATUS_COLORS.review },
-    { name: "Processing", value: a.processing,      color: STATUS_COLORS.processing },
-    { name: "Rejected",   value: a.rejected,        color: STATUS_COLORS.rejected },
+    { name: "Approved", value: a.approved, color: STATUS_COLORS.approved },
+    { name: "Review", value: a.awaiting_review, color: STATUS_COLORS.review },
+    { name: "Processing", value: a.processing, color: STATUS_COLORS.processing },
+    { name: "Rejected", value: a.rejected, color: STATUS_COLORS.rejected },
   ].filter((d) => d.value > 0);
 
-  const approvalRate = a.total_documents > 0
-    ? Math.round((a.approved / a.total_documents) * 100)
-    : 0;
-
-  const axis = { fill: "#8a8a9a", fontSize: 11 };
-  const grid = "rgba(255,255,255,0.06)";
+  const approvalRate = a.total_documents > 0 ? Math.round((a.approved / a.total_documents) * 100) : 0;
 
   return (
     <div className="w-full space-y-6">
-      {/* Header */}
-      <motion.div {...fade} className="flex items-center justify-between">
-        <div>
-          <h1 className="font-[var(--font-display)] text-2xl font-bold tracking-tight text-white">
-            Analytics
-          </h1>
-          <p className="mt-0.5 text-sm text-[var(--ag-text-tertiary)]">
-            Pipeline performance and document metrics
-          </p>
-        </div>
-        <button onClick={() => load(true)} disabled={refreshing} className="btn btn-secondary">
-          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh
-        </button>
-      </motion.div>
+      <AgPageHeader
+        title="Analytics"
+        subtitle="Pipeline performance and document metrics"
+        actions={
+          <button type="button" onClick={() => load(true)} disabled={refreshing} className="ag-btn-secondary">
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh
+          </button>
+        }
+      />
 
-      {/* KPI cards */}
-      {loading ? (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <motion.div key={i} {...fade} transition={{ delay: i * 0.04 }}>
-              <div className="card space-y-3 p-5">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-7 w-14" />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      ) : (
-        <motion.div {...fade} transition={{ delay: 0.05 }}>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label="Total Documents" value={a.total_documents} icon={FileText} accent="indigo" delay={0} />
-            <StatCard label="Total Value" value={formatCurrency(a.total_value)} icon={DollarSign} accent="green" delay={0.05} />
-            <StatCard label="Approval Rate" value={`${approvalRate}%`} icon={Percent} accent="amber" delay={0.1} sub={`${a.approved} of ${a.total_documents} approved`} />
-            <StatCard label="Avg Confidence" value={`${a.avg_confidence}%`} icon={TrendingUp} accent="blue" delay={0.15} sub="AI extraction accuracy" />
-          </div>
-        </motion.div>
-      )}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <AgStatTile label="Total Documents" value={a.total_documents} icon={<FileText className="h-4 w-4 text-[var(--ag-violet-400)]" />} loading={loading} />
+        <AgStatTile label="Total Value" value={formatCurrency(a.total_value)} icon={<DollarSign className="h-4 w-4 text-[var(--ag-emerald-400)]" />} loading={loading} delay={0.05} />
+        <AgStatTile label="Approval Rate" value={`${approvalRate}%`} icon={<Percent className="h-4 w-4 text-[var(--ag-amber-400)]" />} loading={loading} delay={0.1} />
+        <AgStatTile label="Avg Confidence" value={`${a.avg_confidence}%`} icon={<TrendingUp className="h-4 w-4 text-[var(--ag-cyan-400)]" />} loading={loading} delay={0.15} />
+      </div>
 
-      {/* Status breakdown row */}
       {!loading && (
-        <motion.div {...fade} transition={{ delay: 0.1 }}>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label="Approved" value={a.approved} icon={CheckCircle2} accent="green" sub="Ready to export" />
-            <StatCard label="For Review" value={a.awaiting_review} icon={Clock} accent="amber" sub="Awaiting human review" />
-            <StatCard label="Processing" value={a.processing} icon={RefreshCw} accent="blue" sub="AI extraction running" />
-            <StatCard label="Rejected" value={a.rejected} icon={XCircle} accent="red" sub="Manual rejection" />
-          </div>
-        </motion.div>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <AgStatTile label="Approved" value={a.approved} icon={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
+          <AgStatTile label="For Review" value={a.awaiting_review} icon={<Clock className="h-4 w-4 text-amber-400" />} />
+          <AgStatTile label="Processing" value={a.processing} icon={<RefreshCw className="h-4 w-4 text-sky-400" />} />
+          <AgStatTile label="Rejected" value={a.rejected} icon={<XCircle className="h-4 w-4 text-rose-400" />} />
+        </div>
       )}
 
-      {/* Charts row 1 */}
-      <motion.div {...fade} transition={{ delay: 0.15 }}>
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-          <HoverCard className="p-5 xl:col-span-2">
-            <div className="mb-5">
-              <h2 className="font-bold text-white">Weekly Processing Activity</h2>
-              <p className="mt-0.5 text-xs text-[var(--ag-text-tertiary)]">7-day document volume trend</p>
-            </div>
-            {loading ? (
-              <Skeleton className="h-48 w-full rounded-lg" />
-            ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={weeklyData} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="agP" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#be93ff" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#be93ff" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="agA" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#34d399" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
-                  <XAxis dataKey="day" tick={axis} axisLine={false} tickLine={false} />
-                  <YAxis tick={axis} axisLine={false} tickLine={false} />
-                  <Tooltip content={<ChartTip />} cursor={{ stroke: "rgba(255,255,255,0.1)" }} />
-                  <Area type="monotone" dataKey="processed" name="Processed" stroke="#be93ff" strokeWidth={2} fill="url(#agP)" dot={false} activeDot={{ r: 4, fill: "#be93ff" }} />
-                  <Area type="monotone" dataKey="approved" name="Approved" stroke="#34d399" strokeWidth={2} fill="url(#agA)" dot={false} activeDot={{ r: 4, fill: "#34d399" }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </HoverCard>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <AgChartCard title="Weekly Processing Activity" subtitle="7-day volume trend" className="xl:col-span-2">
+          {loading ? <div className="ag-skeleton h-48 w-full" /> : (
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={weeklyData} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
+                <AgChartGradients />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
+                <XAxis dataKey="day" tick={CHART_AXIS} axisLine={false} tickLine={false} />
+                <YAxis tick={CHART_AXIS} axisLine={false} tickLine={false} />
+                <Tooltip content={<AgChartTip />} />
+                <Area type="monotone" dataKey="processed" name="Processed" stroke="#be93ff" strokeWidth={2} fill="url(#agProcessed)" dot={false} />
+                <Area type="monotone" dataKey="approved" name="Approved" stroke="#34d399" strokeWidth={2} fill="url(#agApproved)" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </AgChartCard>
 
-          {/* Status pie */}
-          <HoverCard className="p-5">
-            <div className="mb-5">
-              <h2 className="font-bold text-white">Status Breakdown</h2>
-              <p className="mt-0.5 text-xs text-[var(--ag-text-tertiary)]">Current document distribution</p>
-            </div>
-            {loading ? (
-              <div className="flex h-48 items-center justify-center">
-                <Skeleton className="h-40 w-40 rounded-full" />
-              </div>
-            ) : statusBreakdown.length === 0 ? (
-              <div className="flex h-48 items-center justify-center text-sm text-[var(--ag-text-tertiary)]">
-                No data yet
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie data={statusBreakdown} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value" stroke="none">
-                    {statusBreakdown.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<ChartTip />} />
-                  <Legend formatter={(value) => <span className="text-xs text-[var(--ag-text-secondary)]">{value}</span>} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </HoverCard>
-        </div>
-      </motion.div>
+        <AgGlassCard className="p-5">
+          <h2 className="mb-5 font-bold text-white">Status Breakdown</h2>
+          {loading ? <div className="ag-skeleton mx-auto h-40 w-40 rounded-full" /> : statusBreakdown.length === 0 ? (
+            <p className="py-16 text-center text-sm text-[var(--ag-text-tertiary)]">No data yet</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={statusBreakdown} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value" stroke="none">
+                  {statusBreakdown.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                </Pie>
+                <Tooltip content={<AgChartTip />} />
+                <Legend formatter={(v) => <span className="text-xs text-[var(--ag-text-secondary)]">{v}</span>} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </AgGlassCard>
+      </div>
 
-      {/* Charts row 2 */}
-      <motion.div {...fade} transition={{ delay: 0.2 }}>
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <HoverCard className="p-5">
-            <div className="mb-5">
-              <h2 className="font-bold text-white">Monthly Volume</h2>
-              <p className="mt-0.5 text-xs text-[var(--ag-text-tertiary)]">Documents processed per month (YTD)</p>
-            </div>
-            {loading ? (
-              <Skeleton className="h-48 w-full rounded-lg" />
-            ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={monthlyData} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="agBar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#a855f7" />
-                      <stop offset="100%" stopColor="#6366f1" />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
-                  <XAxis dataKey="month" tick={axis} axisLine={false} tickLine={false} />
-                  <YAxis tick={axis} axisLine={false} tickLine={false} />
-                  <Tooltip content={<ChartTip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-                  <Bar dataKey="volume" name="Documents" fill="url(#agBar)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </HoverCard>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <AgChartCard title="Monthly Volume" subtitle="Documents per month (YTD)">
+          {loading ? <div className="ag-skeleton h-48 w-full" /> : (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={monthlyData} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
+                <AgChartGradients />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
+                <XAxis dataKey="month" tick={CHART_AXIS} axisLine={false} tickLine={false} />
+                <YAxis tick={CHART_AXIS} axisLine={false} tickLine={false} />
+                <Tooltip content={<AgChartTip />} />
+                <Bar dataKey="volume" name="Documents" fill="url(#agBar)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </AgChartCard>
 
-          <HoverCard className="p-5">
-            <div className="mb-5">
-              <h2 className="font-bold text-white">Monthly Invoice Value</h2>
-              <p className="mt-0.5 text-xs text-[var(--ag-text-tertiary)]">Total approved invoice value per month</p>
-            </div>
-            {loading ? (
-              <Skeleton className="h-48 w-full rounded-lg" />
-            ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={monthlyData} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="agV" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
-                  <XAxis dataKey="month" tick={axis} axisLine={false} tickLine={false} />
-                  <YAxis tick={axis} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip
-                    cursor={{ stroke: "rgba(255,255,255,0.1)" }}
-                    content={({ active, payload, label }: any) => {
-                      if (!active || !payload?.length) return null;
-                      return (
-                        <div className="glass rounded-xl px-3.5 py-2.5 text-xs shadow-xl">
-                          <p className="mb-1 font-semibold text-white">{label}</p>
-                          <p className="font-bold text-cyan-300">{formatCurrency(payload[0].value)}</p>
-                        </div>
-                      );
-                    }}
-                  />
-                  <Area type="monotone" dataKey="value" name="Value" stroke="#06b6d4" strokeWidth={2} fill="url(#agV)" dot={false} activeDot={{ r: 4, fill: "#06b6d4" }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </HoverCard>
-        </div>
-      </motion.div>
-
-      {/* Summary table */}
-      <motion.div {...fade} transition={{ delay: 0.25 }}>
-        <HoverCard className="overflow-hidden">
-          <div className="border-b border-[var(--ag-border)] px-5 py-4">
-            <h2 className="font-bold text-white">Pipeline Summary</h2>
-          </div>
-          <table className="data-table w-full">
-            <thead>
-              <tr>
-                <th>Metric</th>
-                <th className="text-right">Value</th>
-                <th className="text-right">% of Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { label: "Total Documents", value: a.total_documents, pct: 100 },
-                { label: "Approved", value: a.approved, pct: approvalRate },
-                { label: "Awaiting Review", value: a.awaiting_review, pct: a.total_documents > 0 ? Math.round((a.awaiting_review / a.total_documents) * 100) : 0 },
-                { label: "Processing", value: a.processing, pct: a.total_documents > 0 ? Math.round((a.processing / a.total_documents) * 100) : 0 },
-                { label: "Rejected", value: a.rejected, pct: a.total_documents > 0 ? Math.round((a.rejected / a.total_documents) * 100) : 0 },
-                { label: "Total Value", value: formatCurrency(a.total_value), pct: null },
-                { label: "Avg. Confidence", value: `${a.avg_confidence}%`, pct: null },
-              ].map((row) => (
-                <tr key={row.label} className="transition-colors hover:bg-[var(--ag-surface-glass)]">
-                  <td className="font-medium text-[var(--ag-text-secondary)]">{row.label}</td>
-                  <td className="tabnum text-right font-semibold text-white">{row.value}</td>
-                  <td className="text-right text-[var(--ag-text-tertiary)]">
-                    {row.pct !== null ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
-                          <div className="h-full rounded-full bg-[var(--ag-gradient-primary)]" style={{ width: `${row.pct}%` }} />
-                        </div>
-                        <span className="w-8 text-right text-xs">{row.pct}%</span>
+        <AgChartCard title="Monthly Invoice Value" subtitle="Approved value per month">
+          {loading ? <div className="ag-skeleton h-48 w-full" /> : (
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={monthlyData} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+                <AgChartGradients />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
+                <XAxis dataKey="month" tick={CHART_AXIS} axisLine={false} tickLine={false} />
+                <YAxis tick={CHART_AXIS} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    return (
+                      <div className="ag-chart-tip">
+                        <p className="mb-1 font-semibold text-white">{label}</p>
+                        <p className="font-bold text-cyan-300">{formatCurrency(payload[0].value as number)}</p>
                       </div>
-                    ) : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </HoverCard>
-      </motion.div>
+                    );
+                  }}
+                />
+                <Area type="monotone" dataKey="value" name="Value" stroke="#06b6d4" strokeWidth={2} fill="url(#agV)" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </AgChartCard>
+      </div>
+
+      <AgTableWrap>
+        <div className="border-b border-[var(--ag-border)] px-5 py-4">
+          <h2 className="font-bold text-white">Pipeline Summary</h2>
+        </div>
+        <AgDataTable>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th className="text-right">Value</th>
+              <th className="text-right">% of Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { label: "Total Documents", value: a.total_documents, pct: 100 },
+              { label: "Approved", value: a.approved, pct: approvalRate },
+              { label: "Awaiting Review", value: a.awaiting_review, pct: a.total_documents > 0 ? Math.round((a.awaiting_review / a.total_documents) * 100) : 0 },
+              { label: "Processing", value: a.processing, pct: a.total_documents > 0 ? Math.round((a.processing / a.total_documents) * 100) : 0 },
+              { label: "Rejected", value: a.rejected, pct: a.total_documents > 0 ? Math.round((a.rejected / a.total_documents) * 100) : 0 },
+              { label: "Total Value", value: formatCurrency(a.total_value), pct: null },
+              { label: "Avg. Confidence", value: `${a.avg_confidence}%`, pct: null },
+            ].map((row) => (
+              <tr key={row.label}>
+                <td className="text-[var(--ag-text-secondary)]">{row.label}</td>
+                <td className="tabnum text-right font-semibold text-white">{row.value}</td>
+                <td className="text-right text-[var(--ag-text-tertiary)]">
+                  {row.pct !== null ? `${row.pct}%` : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </AgDataTable>
+      </AgTableWrap>
     </div>
   );
 }

@@ -51,7 +51,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     await supabaseAdmin.from("line_items").delete().eq("invoice_id", id);
     if (line_items.length > 0) {
       await supabaseAdmin.from("line_items").insert(
-        line_items.map((item: any) => ({ ...item, invoice_id: parseInt(id) }))
+        line_items.map((item: Record<string, unknown>) => ({ ...item, invoice_id: parseInt(id) }))
       );
     }
   }
