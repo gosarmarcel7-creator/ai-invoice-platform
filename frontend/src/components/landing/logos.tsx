@@ -16,14 +16,18 @@ export function Logos() {
         Trusted by finance & operations teams
       </p>
       <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
-        <div className="flex w-max animate-marquee gap-14 pr-14">
-          {[...companies, ...companies].map((c, i) => (
-            <span
-              key={i}
-              className="select-none whitespace-nowrap text-lg font-semibold tracking-tight text-ink-faint transition-colors hover:text-ink-soft"
-            >
-              {c}
-            </span>
+        <div className="flex w-max animate-marquee">
+          {Array.from({ length: 4 }).map((_, groupIndex) => (
+            <div key={groupIndex} className="flex shrink-0 items-center gap-14 pr-14" aria-hidden={groupIndex > 0}>
+              {companies.map((c) => (
+                <span
+                  key={`${groupIndex}-${c}`}
+                  className="select-none whitespace-nowrap text-lg font-semibold tracking-tight text-ink-faint transition-colors hover:text-ink-soft"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
           ))}
         </div>
       </div>
