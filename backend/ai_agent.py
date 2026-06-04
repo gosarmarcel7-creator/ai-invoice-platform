@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+MISTRAL_MODEL = os.getenv("MISTRAL_MODEL") or "mistral-large-latest"
 
 _VENDORS = [
     "Acme Corporation", "TechSolutions Ltd", "Global Supplies Inc",
@@ -86,7 +87,7 @@ def extract_invoice_data(text: str) -> dict:
         from mistralai.client.sdk import Mistral
         client = Mistral(api_key=MISTRAL_API_KEY)
         response = client.chat.complete(
-            model="mistral-large-latest",
+            model=MISTRAL_MODEL,
             messages=[{"role": "user", "content": _PROMPT + text}],
             temperature=0.1,
         )

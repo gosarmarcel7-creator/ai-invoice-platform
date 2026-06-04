@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   if (SHARED_SECRET && headerSecret !== SHARED_SECRET) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (!TARGET_URL) {
+  if (!TARGET_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ ok: true, dispatched: 0, skipped: true });
   }
 

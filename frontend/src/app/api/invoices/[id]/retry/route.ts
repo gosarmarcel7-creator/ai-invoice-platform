@@ -41,13 +41,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await safeAudit({
     invoiceId: parseInt(id, 10),
     userId: user.id,
+    supabaseAdmin,
     action: "processing_retried",
     fromStatus: "failed",
     toStatus: "processing",
     details: { retry_count: retryCount },
   });
 
-  processInvoiceExtraction(parseInt(id, 10), invoice.raw_text ?? "", user.id).catch(console.error);
+  processInvoiceExtraction(parseInt(id, 10), invoice.raw_text ?? "", user.id, supabaseAdmin).catch(console.error);
 
   return NextResponse.json({ ok: true, retry_count: retryCount });
 }

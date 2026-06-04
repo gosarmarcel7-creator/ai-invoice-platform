@@ -82,6 +82,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   await safeAudit({
     invoiceId: parseInt(id, 10),
     userId: user.id,
+    supabaseAdmin,
     action: "review_saved",
     fromStatus: existing.status as InvoiceStatus,
     toStatus: (data?.status as InvoiceStatus | undefined) ?? (existing.status as InvoiceStatus),
@@ -92,6 +93,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     await safeStatusSideEffects({
       invoiceId: parseInt(id, 10),
       userId: user.id,
+      supabaseAdmin,
       fromStatus: existing.status as InvoiceStatus,
       toStatus: nextStatus,
       details: { updated_fields: Object.keys(sanitizedFields) },
@@ -117,6 +119,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   await safeAudit({
     invoiceId: parseInt(id, 10),
     userId: user.id,
+    supabaseAdmin,
     action: "deleted",
   });
   return new NextResponse(null, { status: 204 });

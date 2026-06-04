@@ -5,13 +5,29 @@ type AdminClient = SupabaseClient<any, "public", any>;
 
 let cachedAdmin: AdminClient | null = null;
 
+function requiredEnv(name: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANON_KEY" | "SUPABASE_SERVICE_ROLE_KEY") {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is required`);
+  }
+  return value;
+}
+
+function getSupabaseUrl() {
+  return requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
+}
+
+function getSupabaseAnonKey() {
+  return requiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+}
+
 // Service-role client for server-side API routes (bypasses RLS).
 // Keep initialization lazy so `next build` can evaluate route modules without runtime env vars.
 export function getSupabaseAdmin() {
   if (!cachedAdmin) {
     cachedAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      requiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
+      requiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
       { auth: { autoRefreshToken: false, persistSession: false } }
     ) as AdminClient;
   }
@@ -21,11 +37,17 @@ export function getSupabaseAdmin() {
 // User-scoped client using their JWT (enforces RLS)
 export function supabaseForUser(accessToken: string) {
   const client = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
+    getSupabaseUrl(),
+    getSupabaseAnonKey(),
+    {
+      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    }
   );
-  client.auth.setSession({ access_token: accessToken, refresh_token: "" });
   return client;
 }
 

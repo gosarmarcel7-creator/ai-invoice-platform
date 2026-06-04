@@ -112,6 +112,7 @@ export async function POST(req: NextRequest) {
   await safeAudit({
     invoiceId: invoice.id,
     userId: user.id,
+    supabaseAdmin,
     action: "uploaded",
     toStatus: "processing",
     details: {
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  processInvoiceExtraction(invoice.id, text, user.id).catch(console.error);
+  processInvoiceExtraction(invoice.id, text, user.id, supabaseAdmin).catch(console.error);
 
   return NextResponse.json(invoice);
 }

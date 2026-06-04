@@ -7,8 +7,10 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: MISTRAL_API_KEY
-        value: demNtE67EC6JgovKPd8dDmOtpUeAseeY
+        sync: false
+      - key: MISTRAL_MODEL
+        value: mistral-large-latest
       - key: DATABASE_URL
-        value: postgresql://postgres.eopwilbjjnirqxptmiyp:DocuExtract2026!@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+        sync: false
       - key: SUPABASE_JWT_SECRET
-        value: U7JTgombuqGbDKQY83sqEi0FLbTVJsAGvLqrkaxHmvjnCRglIOrikRtkFoSlbe7YSiGUMEqi7CIrd+nzjEyXuA==
+        sync: false

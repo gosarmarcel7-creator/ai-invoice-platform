@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
       safeAudit({
         invoiceId: invoice.id,
         userId: user.id,
+        supabaseAdmin,
         action: "exported",
         details: { status: status ?? "all", search: search ?? "" },
       })

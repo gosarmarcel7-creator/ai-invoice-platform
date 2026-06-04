@@ -1,4 +1,5 @@
-import { getSupabaseAdmin, getUserFromRequest } from "@/lib/supabase-admin";
+import { supabaseForUser, getUserFromRequest } from "@/lib/supabase-admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
 import { buildCsvRows, canRetryInvoice, validateExtractionResult } from "@/lib/invoice-workflow";
 import { extractInvoiceData } from "@/lib/mistral";
@@ -28,11 +29,8 @@ export async function requireUser(req: Request) {
     return { error: new Response(JSON.stringify({ error: "Not authenticated" }), { status: 401 }) };
   }
 
-  const supabaseAdmin = getSupabaseAdmin();
-  const {
-    data: { user },
-    error,
-  } = await supabaseAdmin.auth.getUser(token);
+  const supabaseAdmin = supabaseForUser(token);
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser();
 
   if (error || !user) {
     return { error: new Response(JSON.stringify({ error: "Invalid token" }), { status: 401 }) };
@@ -41,8 +39,12 @@ export async function requireUser(req: Request) {
   return { user, supabaseAdmin };
 }
 
-export async function processInvoiceExtraction(invoiceId: number, text: string, userId: string) {
-  const supabaseAdmin = getSupabaseAdmin();
+export async function processInvoiceExtraction(
+  invoiceId: number,
+  text: string,
+  userId: string,
+  supabaseAdmin: SupabaseClient
+) {
 
   try {
     const extracted = await extractInvoiceData(text);
@@ -52,6 +54,7 @@ export async function processInvoiceExtraction(invoiceId: number, text: string, 
       await markInvoiceFailed({
         invoiceId,
         userId,
+        supabaseAdmin,
         message: validated.error,
       });
       return;
@@ -74,8 +77,8 @@ export async function processInvoiceExtraction(invoiceId: number, text: string, 
         last_error: null,
         processed_at: new Date().toISOString(),
       })
-      .eq("id", invoiceId)
-      .eq("user_id", userId);
+        .eq("id", invoiceId)
+        .eq("user_id", userId);
 
     await supabaseAdmin.from("line_items").delete().eq("invoice_id", invoiceId);
     if (data.line_items.length > 0) {
@@ -93,6 +96,7 @@ export async function processInvoiceExtraction(invoiceId: number, text: string, 
     await safeAudit({
       invoiceId,
       userId,
+      supabaseAdmin,
       action: "extraction_completed",
       fromStatus: "processing",
       toStatus: "review",
@@ -101,6 +105,8 @@ export async function processInvoiceExtraction(invoiceId: number, text: string, 
 
     await safeOutbox({
       invoiceId,
+      userId,
+      supabaseAdmin,
       eventType: "invoice.review",
       payload: {
         invoice_id: invoiceId,
@@ -114,6 +120,7 @@ export async function processInvoiceExtraction(invoiceId: number, text: string, 
     await markInvoiceFailed({
       invoiceId,
       userId,
+      supabaseAdmin,
       message: error instanceof Error ? error.message : "Invoice extraction failed.",
     });
   }
@@ -122,13 +129,14 @@ export async function processInvoiceExtraction(invoiceId: number, text: string, 
 async function markInvoiceFailed({
   invoiceId,
   userId,
+  supabaseAdmin,
   message,
 }: {
   invoiceId: number;
   userId: string;
+  supabaseAdmin: SupabaseClient;
   message: string;
 }) {
-  const supabaseAdmin = getSupabaseAdmin();
   await supabaseAdmin
     .from("invoices")
     .update({
@@ -144,6 +152,7 @@ async function markInvoiceFailed({
   await safeAudit({
     invoiceId,
     userId,
+    supabaseAdmin,
     action: "processing_failed",
     fromStatus: "processing",
     toStatus: "failed",
@@ -152,6 +161,8 @@ async function markInvoiceFailed({
 
   await safeOutbox({
     invoiceId,
+    userId,
+    supabaseAdmin,
     eventType: "invoice.failed",
     payload: { invoice_id: invoiceId, user_id: userId, status: "failed", error: message },
   });
@@ -160,6 +171,7 @@ async function markInvoiceFailed({
 export async function safeAudit({
   invoiceId,
   userId,
+  supabaseAdmin,
   action,
   fromStatus,
   toStatus,
@@ -167,13 +179,14 @@ export async function safeAudit({
 }: {
   invoiceId: number;
   userId: string | null;
+  supabaseAdmin: SupabaseClient;
   action: AuditAction;
   fromStatus?: InvoiceStatus | null;
   toStatus?: InvoiceStatus | null;
   details?: Record<string, unknown>;
 }) {
   try {
-    await getSupabaseAdmin().from("invoice_audit_log").insert({
+    await supabaseAdmin.from("invoice_audit_log").insert({
       invoice_id: invoiceId,
       user_id: userId,
       action,
@@ -188,16 +201,21 @@ export async function safeAudit({
 
 export async function safeOutbox({
   invoiceId,
+  userId,
+  supabaseAdmin,
   eventType,
   payload,
 }: {
   invoiceId: number;
+  userId: string;
+  supabaseAdmin: SupabaseClient;
   eventType: EventType;
   payload: Record<string, unknown>;
 }) {
   try {
-    await getSupabaseAdmin().from("webhook_outbox").insert({
+    await supabaseAdmin.from("webhook_outbox").insert({
       invoice_id: invoiceId,
+      user_id: userId,
       event_type: eventType,
       payload,
       delivery_status: "pending",
@@ -261,12 +279,14 @@ export function getStatusEventType(status: InvoiceStatus): EventType | null {
 export async function safeStatusSideEffects({
   invoiceId,
   userId,
+  supabaseAdmin,
   fromStatus,
   toStatus,
   details,
 }: {
   invoiceId: number;
   userId: string;
+  supabaseAdmin: SupabaseClient;
   fromStatus: InvoiceStatus;
   toStatus: InvoiceStatus;
   details?: Record<string, unknown>;
@@ -274,6 +294,7 @@ export async function safeStatusSideEffects({
   await safeAudit({
     invoiceId,
     userId,
+    supabaseAdmin,
     action: getStatusAuditAction(toStatus),
     fromStatus,
     toStatus,
@@ -284,6 +305,8 @@ export async function safeStatusSideEffects({
   if (eventType) {
     await safeOutbox({
       invoiceId,
+      userId,
+      supabaseAdmin,
       eventType,
       payload: {
         invoice_id: invoiceId,

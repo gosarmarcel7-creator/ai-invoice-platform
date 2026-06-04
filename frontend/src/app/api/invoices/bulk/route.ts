@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       await safeAudit({
         invoiceId: invoice.id,
         userId: user.id,
+        supabaseAdmin,
         action: "bulk_updated",
         fromStatus: invoice.status as InvoiceStatus,
         toStatus: status,
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
       await safeStatusSideEffects({
         invoiceId: invoice.id,
         userId: user.id,
+        supabaseAdmin,
         fromStatus: invoice.status as InvoiceStatus,
         toStatus: status,
         details: { bulk: true },
