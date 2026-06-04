@@ -493,6 +493,7 @@ export default function AdminPage() {
               <OverviewTab
                 summary={summary}
                 adminCount={adminCount}
+                recentUsers={summary?.recent_users ?? []}
                 recentInvoices={summary?.recent_invoices ?? []}
                 onOpenInvoice={openInvoice}
                 onOpenUsers={() => setActive("users")}
@@ -588,12 +589,14 @@ export default function AdminPage() {
 function OverviewTab({
   summary,
   adminCount,
+  recentUsers,
   recentInvoices,
   onOpenInvoice,
   onOpenUsers,
 }: {
   summary: AdminSummary | null;
   adminCount: number;
+  recentUsers: AdminUserRow[];
   recentInvoices: AdminInvoiceRow[];
   onOpenInvoice: (id: number) => void;
   onOpenUsers: () => void;
