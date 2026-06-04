@@ -37,7 +37,7 @@ export async function extractInvoiceData(text: string): Promise<Record<string, u
     }
     return JSON.parse(raw);
   } catch (e) {
-    console.error("AI extraction error:", e);
+    console.error("Mistral extraction error:", e);
     throw new Error("Invoice extraction failed.");
   }
 }

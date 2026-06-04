@@ -100,5 +100,5 @@ def extract_invoice_data(text: str) -> dict:
             raw = raw.strip()
         return json.loads(raw)
     except Exception as e:
-        print(f"AI extraction error: {e}")
+        print(f"Mistral extraction error: {e}")
         return _mock_data()
