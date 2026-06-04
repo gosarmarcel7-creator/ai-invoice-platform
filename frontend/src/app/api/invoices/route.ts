@@ -5,7 +5,7 @@ import {
   requireUser,
   safeAudit,
 } from "@/lib/invoice-server";
-import { validateUpload } from "@/lib/invoice-workflow";
+import { sanitizeDatabaseText, validateUpload } from "@/lib/invoice-workflow";
 
 async function extractText(buffer: Buffer, filename: string): Promise<string> {
   if (filename.toLowerCase().endsWith(".pdf")) {
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const text = await extractText(buffer, file.name);
+  const text = sanitizeDatabaseText(await extractText(buffer, file.name));
   const fileHash = createHash("sha256").update(buffer).digest("hex");
 
   const { data: duplicate } = await supabaseAdmin
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  processInvoiceExtraction(invoice.id, text, user.id, supabaseAdmin).catch(console.error);
+  processInvoiceExtraction(invoice.id, text, user.id, supabaseAdmin, user.id).catch(console.error);
 
   return NextResponse.json(invoice);
 }

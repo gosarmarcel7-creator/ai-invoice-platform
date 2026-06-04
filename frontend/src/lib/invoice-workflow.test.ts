@@ -3,6 +3,7 @@ import {
   buildCsvRows,
   canRetryInvoice,
   computeAttentionReasons,
+  sanitizeDatabaseText,
   validateExtractionResult,
   validateUpload,
 } from "@/lib/invoice-workflow";
@@ -46,6 +47,31 @@ describe("validateUpload", () => {
 });
 
 describe("validateExtractionResult", () => {
+  it("strips null bytes from extracted text fields", () => {
+    const result = validateExtractionResult({
+      vendor_name: "Acme\u0000 Corp",
+      invoice_number: "INV-1001\u0000",
+      total_amount: 120,
+      date: "2026-06-01",
+      due_date: "2026-06-30",
+      confidence_score: 0.91,
+      line_items: [
+        {
+          description: "Consulting\u0000 Services",
+          quantity: 1,
+          unit_price: 120,
+          total_price: 120,
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.vendor_name).toBe("Acme Corp");
+    expect(result.data.invoice_number).toBe("INV-1001");
+    expect(result.data.line_items[0].description).toBe("Consulting Services");
+  });
+
   it("returns review with attention flags for low confidence and inconsistent totals", () => {
     const result = validateExtractionResult({
       vendor_name: "Acme Corp",
@@ -86,6 +112,12 @@ describe("validateExtractionResult", () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toContain("date");
+  });
+});
+
+describe("sanitizeDatabaseText", () => {
+  it("removes null bytes from database-bound text", () => {
+    expect(sanitizeDatabaseText("invoice\u0000 text")).toBe("invoice text");
   });
 });
 

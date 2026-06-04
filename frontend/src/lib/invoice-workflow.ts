@@ -54,6 +54,10 @@ export type ValidatedExtraction = {
   line_items: LineItem[];
 };
 
+export function sanitizeDatabaseText(value: string) {
+  return value.replace(/\u0000/g, "");
+}
+
 export function validateUpload(input: UploadInput):
   | { ok: true; normalizedMimeType: string; normalizedExtension: string }
   | { ok: false; error: string } {
@@ -235,7 +239,7 @@ function roundCurrency(value: number) {
 }
 
 function normalizeNullableString(value: string | null | undefined) {
-  const trimmed = value?.trim();
+  const trimmed = value == null ? null : sanitizeDatabaseText(value).trim();
   return trimmed ? trimmed : null;
 }
 

@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
       });
       await safeStatusSideEffects({
         invoiceId: invoice.id,
-        userId: user.id,
+        ownerUserId: user.id,
+        actorUserId: user.id,
         supabaseAdmin,
         fromStatus: invoice.status as InvoiceStatus,
         toStatus: status,

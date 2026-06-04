@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
 import { buildCsvRows, canRetryInvoice, validateExtractionResult } from "@/lib/invoice-workflow";
 import { extractInvoiceData } from "@/lib/extraction";
+import { sendInvoiceStatusEmail } from "@/lib/mailjet";
 
 type AuditAction =
   | "uploaded"
@@ -42,8 +43,9 @@ export async function requireUser(req: Request) {
 export async function processInvoiceExtraction(
   invoiceId: number,
   text: string,
-  userId: string,
-  supabaseAdmin: SupabaseClient
+  ownerUserId: string,
+  supabaseAdmin: SupabaseClient,
+  actorUserId: string = ownerUserId
 ) {
 
   try {
@@ -53,7 +55,7 @@ export async function processInvoiceExtraction(
     if (!validated.ok) {
       await markInvoiceFailed({
         invoiceId,
-        userId,
+        userId: ownerUserId,
         supabaseAdmin,
         message: validated.error,
       });
@@ -78,7 +80,7 @@ export async function processInvoiceExtraction(
         processed_at: new Date().toISOString(),
       })
         .eq("id", invoiceId)
-        .eq("user_id", userId);
+        .eq("user_id", ownerUserId);
 
     await supabaseAdmin.from("line_items").delete().eq("invoice_id", invoiceId);
     if (data.line_items.length > 0) {
@@ -95,7 +97,7 @@ export async function processInvoiceExtraction(
 
     await safeAudit({
       invoiceId,
-      userId,
+      userId: actorUserId,
       supabaseAdmin,
       action: "extraction_completed",
       fromStatus: "processing",
@@ -105,12 +107,12 @@ export async function processInvoiceExtraction(
 
     await safeOutbox({
       invoiceId,
-      userId,
+      userId: ownerUserId,
       supabaseAdmin,
       eventType: "invoice.review",
       payload: {
         invoice_id: invoiceId,
-        user_id: userId,
+        user_id: ownerUserId,
         status: "review",
         needs_attention: needsAttention,
         attention_reasons: attentionReasons,
@@ -119,7 +121,7 @@ export async function processInvoiceExtraction(
   } catch (error) {
     await markInvoiceFailed({
       invoiceId,
-      userId,
+      userId: ownerUserId,
       supabaseAdmin,
       message: error instanceof Error ? error.message : "Invoice extraction failed.",
     });
@@ -278,14 +280,16 @@ export function getStatusEventType(status: InvoiceStatus): EventType | null {
 
 export async function safeStatusSideEffects({
   invoiceId,
-  userId,
+  ownerUserId,
+  actorUserId,
   supabaseAdmin,
   fromStatus,
   toStatus,
   details,
 }: {
   invoiceId: number;
-  userId: string;
+  ownerUserId: string;
+  actorUserId: string;
   supabaseAdmin: SupabaseClient;
   fromStatus: InvoiceStatus;
   toStatus: InvoiceStatus;
@@ -293,7 +297,7 @@ export async function safeStatusSideEffects({
 }) {
   await safeAudit({
     invoiceId,
-    userId,
+    userId: actorUserId,
     supabaseAdmin,
     action: getStatusAuditAction(toStatus),
     fromStatus,
@@ -305,17 +309,28 @@ export async function safeStatusSideEffects({
   if (eventType) {
     await safeOutbox({
       invoiceId,
-      userId,
+      userId: ownerUserId,
       supabaseAdmin,
       eventType,
       payload: {
         invoice_id: invoiceId,
-        user_id: userId,
+        user_id: ownerUserId,
         from_status: fromStatus,
         status: toStatus,
         ...details,
       },
     });
+  }
+
+  const mailjetResult = await sendInvoiceStatusEmail({
+    invoiceId,
+    userId: ownerUserId,
+    supabaseAdmin,
+    fromStatus,
+    toStatus,
+  });
+  if (!mailjetResult.ok && !mailjetResult.skipped) {
+    console.warn("Mailjet notification failed", mailjetResult.error);
   }
 }
 

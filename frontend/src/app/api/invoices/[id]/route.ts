@@ -92,7 +92,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (statusChanged) {
     await safeStatusSideEffects({
       invoiceId: parseInt(id, 10),
-      userId: user.id,
+      ownerUserId: user.id,
+      actorUserId: user.id,
       supabaseAdmin,
       fromStatus: existing.status as InvoiceStatus,
       toStatus: nextStatus,
