@@ -48,7 +48,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     details: { retry_count: retryCount },
   });
 
-  processInvoiceExtraction(parseInt(id, 10), invoice.raw_text ?? "", user.id, supabaseAdmin).catch(console.error);
+  processInvoiceExtraction(
+    parseInt(id, 10),
+    invoice.raw_text ?? "",
+    user.id,
+    supabaseAdmin,
+    user.id
+  ).catch(console.error);
 
   return NextResponse.json({ ok: true, retry_count: retryCount });
 }

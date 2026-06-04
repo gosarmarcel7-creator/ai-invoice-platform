@@ -21,6 +21,7 @@ const benefits = [
 function LoginInner() {
   const router = useRouter();
   const params = useSearchParams();
+  const adminHost = process.env.NEXT_PUBLIC_ADMIN_HOST ?? "a-app.docuextract.xyz";
   const [mode, setMode] = useState<"signin" | "signup">(
     params.get("mode") === "signup" ? "signup" : "signin"
   );
@@ -49,7 +50,9 @@ function LoginInner() {
         if (error) throw error;
         toast.success("Welcome back");
       }
-      router.push("/dashboard");
+      const explicitNext = params.get("next");
+      const isAdminHost = window.location.hostname.toLowerCase() === adminHost.toLowerCase();
+      router.push(isAdminHost ? "/admin" : explicitNext || "/dashboard");
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Authentication failed");
@@ -142,6 +145,17 @@ function LoginInner() {
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </form>
+
+            {mode === "signin" && (
+              <div className="mt-4 text-center">
+                <Link
+                  href="/forgot-password"
+                  className="focus-ring rounded text-sm font-medium text-brand-bright hover:underline"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+            )}
 
             <p className="mt-6 text-center text-sm text-ink-mute">
               {mode === "signup" ? "Already have an account?" : "New to DocuExtract?"}{" "}

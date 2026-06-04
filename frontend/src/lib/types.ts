@@ -22,6 +22,7 @@ export interface LineItem {
 export interface Invoice {
   id: number;
   user_id?: string;
+  user_email?: string | null;
   filename: string;
   raw_text?: string | null;
   mime_type?: string | null;

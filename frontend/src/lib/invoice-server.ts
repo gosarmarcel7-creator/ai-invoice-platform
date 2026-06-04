@@ -55,7 +55,8 @@ export async function processInvoiceExtraction(
     if (!validated.ok) {
       await markInvoiceFailed({
         invoiceId,
-        userId: ownerUserId,
+        ownerUserId,
+        actorUserId,
         supabaseAdmin,
         message: validated.error,
       });
@@ -121,7 +122,8 @@ export async function processInvoiceExtraction(
   } catch (error) {
     await markInvoiceFailed({
       invoiceId,
-      userId: ownerUserId,
+      ownerUserId,
+      actorUserId,
       supabaseAdmin,
       message: error instanceof Error ? error.message : "Invoice extraction failed.",
     });
@@ -130,12 +132,14 @@ export async function processInvoiceExtraction(
 
 async function markInvoiceFailed({
   invoiceId,
-  userId,
+  ownerUserId,
+  actorUserId = ownerUserId,
   supabaseAdmin,
   message,
 }: {
   invoiceId: number;
-  userId: string;
+  ownerUserId: string;
+  actorUserId?: string;
   supabaseAdmin: SupabaseClient;
   message: string;
 }) {
@@ -149,11 +153,11 @@ async function markInvoiceFailed({
       attention_reasons: ["empty_extraction"],
     })
     .eq("id", invoiceId)
-    .eq("user_id", userId);
+    .eq("user_id", ownerUserId);
 
   await safeAudit({
     invoiceId,
-    userId,
+    userId: actorUserId,
     supabaseAdmin,
     action: "processing_failed",
     fromStatus: "processing",
@@ -163,10 +167,10 @@ async function markInvoiceFailed({
 
   await safeOutbox({
     invoiceId,
-    userId,
+    userId: ownerUserId,
     supabaseAdmin,
     eventType: "invoice.failed",
-    payload: { invoice_id: invoiceId, user_id: userId, status: "failed", error: message },
+    payload: { invoice_id: invoiceId, user_id: ownerUserId, status: "failed", error: message },
   });
 }
 

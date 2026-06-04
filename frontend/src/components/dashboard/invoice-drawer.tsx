@@ -387,6 +387,11 @@ export function InvoiceDrawer({
                     {invoice.vendor_name ?? "Unknown vendor"}
                   </h2>
                   <p className="truncate font-mono text-xs text-ink-faint">{invoice.filename}</p>
+                  {invoice.user_email && (
+                    <p className="mt-1 truncate text-xs text-ink-soft">
+                      Owner: {invoice.user_email}
+                    </p>
+                  )}
                   <div className="mt-2 flex items-center gap-3">
                     <StatusPill status={invoice.status as InvoiceStatus} />
                     <ConfidenceMeter score={invoice.confidence_score} />

@@ -32,6 +32,8 @@ export function InvoiceTable({
   busyBulk,
   exporting,
   onExport,
+  showOwner = false,
+  getOwnerLabel,
 }: {
   invoices: Invoice[];
   loading: boolean;
@@ -48,9 +50,12 @@ export function InvoiceTable({
   busyBulk: InvoiceStatus | null;
   exporting: boolean;
   onExport: () => void;
+  showOwner?: boolean;
+  getOwnerLabel?: (invoice: Invoice) => string;
 }) {
   const allVisibleSelected =
     invoices.length > 0 && invoices.every((invoice) => selectedIds.includes(invoice.id));
+  const columnCount = showOwner ? 8 : 7;
 
   return (
     <div className="glass grain overflow-hidden rounded-2xl">
@@ -141,6 +146,7 @@ export function InvoiceTable({
                   aria-label="Select all visible invoices"
                 />
               </th>
+              {showOwner && <th className="px-4 py-2.5 font-medium">Owner</th>}
               <th className="px-4 py-2.5 font-medium">Vendor</th>
               <th className="px-4 py-2.5 font-medium">Invoice #</th>
               <th className="px-4 py-2.5 font-medium">Amount</th>
@@ -153,7 +159,7 @@ export function InvoiceTable({
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i} className="border-t border-line">
-                    {Array.from({ length: 7 }).map((__, j) => (
+                    {Array.from({ length: columnCount }).map((__, j) => (
                       <td key={j} className="px-4 py-3.5">
                         <div className="h-3.5 w-full max-w-[120px] animate-pulse rounded bg-black/[0.06]" />
                       </td>
@@ -180,6 +186,18 @@ export function InvoiceTable({
                         aria-label={`Select invoice ${inv.filename}`}
                       />
                     </td>
+                    {showOwner && (
+                      <td className="px-4 py-3.5">
+                        <div className="min-w-0">
+                          <div className="truncate font-medium text-ink">
+                            {getOwnerLabel?.(inv) ?? inv.user_email ?? inv.user_id ?? "Unknown user"}
+                          </div>
+                          <div className="truncate font-mono text-[0.68rem] text-ink-faint">
+                            {inv.user_id ?? "—"}
+                          </div>
+                        </div>
+                      </td>
+                    )}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-surface-2 text-ink-mute">
