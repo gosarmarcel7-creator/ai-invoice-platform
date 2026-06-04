@@ -86,28 +86,40 @@ def _extract_text(content: bytes, filename: str) -> str:
 def _process_in_background(invoice_id: int, text: str) -> None:
     db = database.SessionLocal()
     try:
-        extracted = extract_invoice_data(text)
         inv = db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()
-        if inv:
-            inv.vendor_name = extracted.get("vendor_name")
-            inv.invoice_number = extracted.get("invoice_number")
-            inv.total_amount = extracted.get("total_amount")
-            inv.date = extracted.get("date")
-            inv.due_date = extracted.get("due_date")
-            inv.confidence_score = extracted.get("confidence_score")
-            inv.status = "review"
-            for item in extracted.get("line_items", []):
-                db.add(models.LineItem(
-                    invoice_id=invoice_id,
-                    description=item.get("description"),
-                    quantity=item.get("quantity"),
-                    unit_price=item.get("unit_price"),
-                    total_price=item.get("total_price"),
-                ))
+        if not inv:
+            return
+        if not text.strip():
+            inv.status = "failed"
+            inv.notes = "No readable text could be extracted from the uploaded file."
             db.commit()
+            return
+
+        extracted = extract_invoice_data(text)
+        inv.vendor_name = extracted.get("vendor_name")
+        inv.invoice_number = extracted.get("invoice_number")
+        inv.total_amount = extracted.get("total_amount")
+        inv.date = extracted.get("date")
+        inv.due_date = extracted.get("due_date")
+        inv.confidence_score = extracted.get("confidence_score")
+        inv.status = "review"
+        for item in extracted.get("line_items", []):
+            db.add(models.LineItem(
+                invoice_id=invoice_id,
+                description=item.get("description"),
+                quantity=item.get("quantity"),
+                unit_price=item.get("unit_price"),
+                total_price=item.get("total_price"),
+            ))
+        db.commit()
     except Exception as e:
         print(f"Background task error for invoice {invoice_id}: {e}")
         db.rollback()
+        inv = db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()
+        if inv:
+            inv.status = "failed"
+            inv.notes = str(e)
+            db.commit()
     finally:
         db.close()
 

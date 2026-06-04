@@ -1,38 +1,11 @@
 import { Mistral } from "@mistralai/mistralai";
 
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY?.trim();
 const MISTRAL_MODEL = process.env.MISTRAL_MODEL ?? "mistral-large-latest";
-
-const FALLBACK_VENDORS = [
-  "Acme Corporation",
-  "TechSolutions Ltd",
-  "Global Supplies Inc",
-  "CloudServices Pro",
-  "DataVault Systems",
-  "NexGen Analytics",
-  "Pinnacle Consulting",
-  "Alpine Software",
-  "Meridian Partners",
-  "Vertex Technologies",
-  "Cascade Innovations",
-  "Summit Digital",
-];
-
-const FALLBACK_DESCRIPTIONS = [
-  "Software License (Annual)",
-  "Cloud Hosting - Enterprise Tier",
-  "Professional Services",
-  "Support & Maintenance",
-  "Implementation Consulting",
-  "API Integration Services",
-  "Security Audit",
-  "Data Migration",
-  "Custom Development",
-  "Training & Onboarding",
-];
+const OCR_MODEL = "mistral-ocr-latest";
 
 const PROMPT = `You are an expert invoice data extractor. Extract all key information from the invoice text below.
-Return ONLY a valid JSON object — no markdown, no code fences, no explanation — with this exact schema:
+Return ONLY a valid JSON object - no markdown, no code fences, no explanation - with this exact schema:
 {
   "vendor_name": "string or null",
   "invoice_number": "string or null",
@@ -47,39 +20,6 @@ Return ONLY a valid JSON object — no markdown, no code fences, no explanation 
 
 Invoice Text:
 `;
-
-function getFallbackData(): Record<string, unknown> {
-  const vendor = FALLBACK_VENDORS[Math.floor(Math.random() * FALLBACK_VENDORS.length)];
-  const month = Math.max(1, Math.min(12, Math.floor(Math.random() * 6) + 1));
-  const day = Math.max(1, Math.min(28, Math.floor(Math.random() * 28) + 1));
-  const dueMonth = month < 12 ? month + 1 : 1;
-  const numItems = Math.floor(Math.random() * 4) + 1;
-  const lineItems = [];
-  let total = 0;
-
-  for (let index = 0; index < numItems; index += 1) {
-    const quantity = Math.floor(Math.random() * 20) + 1;
-    const unitPrice = Number((Math.random() * 4250 + 250).toFixed(2));
-    const lineTotal = Number((quantity * unitPrice).toFixed(2));
-    total += lineTotal;
-    lineItems.push({
-      description: FALLBACK_DESCRIPTIONS[Math.floor(Math.random() * FALLBACK_DESCRIPTIONS.length)],
-      quantity,
-      unit_price: unitPrice,
-      total_price: lineTotal,
-    });
-  }
-
-  return {
-    vendor_name: vendor,
-    invoice_number: `INV-${Math.floor(Math.random() * 90000) + 10000}`,
-    total_amount: Number(total.toFixed(2)),
-    date: `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
-    due_date: `2026-${String(dueMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
-    confidence_score: Number((Math.random() * 0.15 + 0.84).toFixed(2)),
-    line_items: lineItems,
-  };
-}
 
 function normalizeMistralContent(content: unknown) {
   if (typeof content === "string") return content.trim();
@@ -100,30 +40,63 @@ function normalizeMistralContent(content: unknown) {
   return "";
 }
 
-export async function extractInvoiceData(text: string): Promise<Record<string, unknown>> {
-  if (!MISTRAL_API_KEY) {
-    return getFallbackData();
+function parseExtractionPayload(raw: string) {
+  let payload = raw.trim();
+  if (payload.startsWith("```")) {
+    payload = payload.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
   }
+  if (!payload) {
+    throw new Error("AI extraction returned no content.");
+  }
+  return JSON.parse(payload) as Record<string, unknown>;
+}
+
+function requireMistralApiKey() {
+  if (!MISTRAL_API_KEY) {
+    throw new Error("MISTRAL_API_KEY is not configured.");
+  }
+  return MISTRAL_API_KEY;
+}
+
+async function extractPdfOcrText(buffer: Buffer, filename: string): Promise<string> {
+  const client = new Mistral({ apiKey: requireMistralApiKey() });
+  const uploadedFile = await client.files.upload({
+    file: {
+      fileName: filename || "invoice.pdf",
+      content: buffer,
+    },
+    purpose: "ocr",
+  });
+
+  const response = await client.ocr.process({
+    model: OCR_MODEL,
+    document: {
+      type: "file",
+      fileId: uploadedFile.id,
+    },
+  });
+
+  return response.pages.map((page) => page.markdown).join("\n\n").trim();
+}
+
+export async function extractInvoiceData(text: string): Promise<Record<string, unknown>> {
+  const client = new Mistral({ apiKey: requireMistralApiKey() });
+  const response = await client.chat.complete({
+    model: MISTRAL_MODEL,
+    messages: [{ role: "user", content: PROMPT + text }],
+    temperature: 0.1,
+    responseFormat: { type: "json_object" },
+  });
+
+  const raw = normalizeMistralContent(response.choices?.[0]?.message?.content);
+  return parseExtractionPayload(raw);
+}
+
+export async function extractOcrTextFromPdf(buffer: Buffer, filename: string): Promise<string> {
   try {
-    const client = new Mistral({ apiKey: MISTRAL_API_KEY });
-    const response = await client.chat.complete({
-      model: MISTRAL_MODEL,
-      messages: [{ role: "user", content: PROMPT + text }],
-      temperature: 0.1,
-      responseFormat: { type: "json_object" },
-    });
-
-    let raw = normalizeMistralContent(response.choices?.[0]?.message?.content);
-    if (raw.startsWith("```")) {
-      raw = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
-    }
-    if (!raw) {
-      return getFallbackData();
-    }
-
-    return JSON.parse(raw);
-  } catch (e) {
-    console.warn("Mistral extraction error, using fallback data:", e);
-    return getFallbackData();
+    return await extractPdfOcrText(buffer, filename);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "PDF OCR failed.";
+    throw new Error(message);
   }
 }

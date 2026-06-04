@@ -1,5 +1,6 @@
 import { Mistral } from "@mistralai/mistralai";
 import { sanitizeDatabaseText } from "@/lib/invoice-workflow";
+import { extractOcrTextFromPdf } from "@/lib/extraction";
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY?.trim();
 const OCR_MODEL = "mistral-ocr-latest";
@@ -10,14 +11,24 @@ function isImageMimeType(mimeType: string) {
   return IMAGE_MIME_TYPES.has(mimeType.toLowerCase());
 }
 
-async function extractPdfText(buffer: Buffer): Promise<string> {
+async function extractPdfText(buffer: Buffer, filename: string): Promise<string> {
   try {
     const { PDFParse } = await import("pdf-parse");
     const parser = new PDFParse({ data: new Uint8Array(buffer) });
     const data = await parser.getText();
     await parser.destroy();
-    return sanitizeDatabaseText(data.text);
+    const text = sanitizeDatabaseText(data.text);
+    if (text.trim()) {
+      return text;
+    }
   } catch {
+    // Fall through to OCR when native PDF text extraction fails or is empty.
+  }
+
+  try {
+    return sanitizeDatabaseText(await extractOcrTextFromPdf(buffer, filename));
+  } catch (error) {
+    console.error("PDF OCR failed:", error);
     return "";
   }
 }
@@ -51,7 +62,7 @@ export async function extractUploadText(
   mimeType: string
 ): Promise<string> {
   if (filename.toLowerCase().endsWith(".pdf")) {
-    return extractPdfText(buffer);
+    return extractPdfText(buffer, filename);
   }
 
   if (isImageMimeType(mimeType)) {

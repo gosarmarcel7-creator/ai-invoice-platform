@@ -49,6 +49,17 @@ export async function processInvoiceExtraction(
 ) {
 
   try {
+    if (!text.trim()) {
+      await markInvoiceFailed({
+        invoiceId,
+        ownerUserId,
+        actorUserId,
+        supabaseAdmin,
+        message: "No readable text could be extracted from the uploaded file.",
+      });
+      return;
+    }
+
     const extracted = await extractInvoiceData(text);
     const validated = validateExtractionResult(extracted);
 
