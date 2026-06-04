@@ -10,10 +10,19 @@ export interface AdminSummary {
   rejected: number;
   failed: number;
   attention: number;
+  attention_rate: number;
+  failed_extraction_rate: number;
+  duplicate_upload_rate: number;
   total_value: number;
   avg_confidence: number;
   recent_users: AdminUserRow[];
   recent_invoices: AdminInvoiceRow[];
+  top_users: AdminActivityRow[];
+  review_load_users: AdminActivityRow[];
+  top_vendors: AdminActivityRow[];
+  duplicate_heavy_users: AdminActivityRow[];
+  attention_invoices: AdminInvoiceRow[];
+  failed_invoices: AdminInvoiceRow[];
 }
 
 export interface AdminUserRow {
@@ -45,6 +54,19 @@ export interface AdminUserListResponse {
 export interface AdminInvoiceRow extends Invoice {
   user_email: string | null;
   user_name: string | null;
+}
+
+export interface AdminActivityRow {
+  id: string;
+  label: string;
+  invoice_count: number;
+  review_count: number;
+  attention_count: number;
+  failed_count: number;
+  duplicate_count: number;
+  review_load_count: number;
+  total_value: number;
+  last_activity_at: string | null;
 }
 
 export interface AdminInvoiceListResponse {

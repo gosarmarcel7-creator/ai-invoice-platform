@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Ban,
   Check,
+  Copy,
   FileText,
   Plus,
   RotateCcw,
@@ -78,9 +79,27 @@ function DrawerBody({
     due_date: invoice.due_date,
   });
   const [items, setItems] = useState<LineItem[]>(invoice.line_items ?? []);
+  const [copied, setCopied] = useState(false);
 
   const set = (k: keyof Invoice, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
   const itemsTotal = items.reduce((s, it) => s + (Number(it.total_price) || 0), 0);
+  const sourceText = invoice.raw_text ?? "";
+  const hasSourceText = sourceText.trim().length > 0;
+  const sourceSnippet = hasSourceText ? sourceText.slice(0, 1200) : "";
+  const sourceTruncated = hasSourceText && sourceText.length > sourceSnippet.length;
+
+  async function copySourceText() {
+    if (!hasSourceText || typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(sourceText);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* noop */
+    }
+  }
 
   function updateItem(idx: number, patch: Partial<LineItem>) {
     setItems((arr) =>
@@ -135,6 +154,37 @@ function DrawerBody({
             </div>
           </div>
         )}
+
+        <div className="rounded-2xl border border-line bg-surface/40 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-ink">Source preview</h3>
+              <p className="mt-1 text-xs leading-relaxed text-ink-mute">
+                Read-only snippet from the extracted text. Inspect the source here before editing
+                the structured fields below.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={copySourceText}
+              disabled={!hasSourceText}
+            >
+              <Copy className="h-4 w-4" />
+              {copied ? "Copied" : "Copy source"}
+            </Button>
+          </div>
+          {hasSourceText ? (
+            <pre className="mt-4 max-h-56 overflow-auto rounded-xl border border-line bg-base/80 p-3 font-mono text-[0.76rem] leading-6 text-ink-soft whitespace-pre-wrap break-words">
+              {sourceSnippet}
+              {sourceTruncated ? "\n\n..." : ""}
+            </pre>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-line bg-base/70 px-3 py-6 text-center text-xs text-ink-mute">
+              No raw text captured for this invoice.
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">

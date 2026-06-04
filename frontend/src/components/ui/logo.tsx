@@ -5,7 +5,7 @@ export function LogoMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-black/20",
+        "relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl",
         className
       )}
     >
@@ -15,7 +15,7 @@ export function LogoMark({ className }: { className?: string }) {
         aria-hidden="true"
         fill
         sizes="40px"
-        className="object-cover"
+        className="object-contain"
       />
       <span className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/15" />
     </span>

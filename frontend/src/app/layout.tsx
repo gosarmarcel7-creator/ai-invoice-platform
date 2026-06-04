@@ -29,6 +29,10 @@ export const metadata: Metadata = {
     description: "AI-powered invoice extraction, review, and analytics for modern finance teams.",
     type: "website",
   },
+  icons: {
+    icon: "/brand/logo-icon.png",
+    apple: "/brand/logo-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

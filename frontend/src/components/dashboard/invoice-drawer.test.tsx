@@ -5,6 +5,7 @@ import type { Invoice } from "@/lib/types";
 const invoice: Invoice = {
   id: 1,
   filename: "failed-invoice.pdf",
+  raw_text: "Vendor: ACME Supplies\nInvoice # 12345\nTotal: $120.00",
   vendor_name: null,
   invoice_number: null,
   total_amount: null,
@@ -22,6 +23,11 @@ const invoice: Invoice = {
 describe("InvoiceDrawer", () => {
   it("shows retry controls and attention flags for failed invoices", () => {
     const onRetry = vi.fn();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
 
     render(
       <InvoiceDrawer
@@ -38,8 +44,13 @@ describe("InvoiceDrawer", () => {
 
     expect(screen.getByText("Extraction failed")).toBeInTheDocument();
     expect(screen.getByText("Attention flags")).toBeInTheDocument();
+    expect(screen.getByText("Source preview")).toBeInTheDocument();
+    expect(screen.getByText(/Vendor: ACME Supplies/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /retry extraction/i }));
     expect(onRetry).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: /copy source/i }));
+    expect(writeText).toHaveBeenCalledWith(invoice.raw_text);
   });
 });

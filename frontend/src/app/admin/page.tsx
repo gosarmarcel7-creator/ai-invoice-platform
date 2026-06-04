@@ -8,6 +8,7 @@ import {
   ArrowRight,
   BadgeCheck,
   CalendarDays,
+  Building2,
   Clock3,
   DollarSign,
   FileText,
@@ -45,6 +46,10 @@ const invoiceStatusOptions: { key: string; label: string }[] = [
   { key: "failed", label: "Failed" },
   { key: "rejected", label: "Rejected" },
 ];
+
+function formatPercent(value: number | null | undefined) {
+  return `${(value ?? 0).toFixed(1)}%`;
+}
 
 type AdminTab = "overview" | "users" | "invoices" | "admins" | "settings";
 
@@ -488,10 +493,9 @@ export default function AdminPage() {
               <OverviewTab
                 summary={summary}
                 adminCount={adminCount}
-                recentUsers={summary?.recent_users ?? []}
                 recentInvoices={summary?.recent_invoices ?? []}
                 onOpenInvoice={openInvoice}
-                onOpenUser={() => setActive("users")}
+                onOpenUsers={() => setActive("users")}
               />
             )}
 
@@ -520,6 +524,7 @@ export default function AdminPage() {
 
             {active === "invoices" && (
               <InvoicesTab
+                summary={summary}
                 search={invoiceSearch}
                 onSearchChange={(value) => {
                   setInvoiceSearch(value);
@@ -583,18 +588,22 @@ export default function AdminPage() {
 function OverviewTab({
   summary,
   adminCount,
-  recentUsers,
   recentInvoices,
   onOpenInvoice,
-  onOpenUser,
+  onOpenUsers,
 }: {
   summary: AdminSummary | null;
   adminCount: number;
-  recentUsers: AdminUserRow[];
   recentInvoices: AdminInvoiceRow[];
   onOpenInvoice: (id: number) => void;
-  onOpenUser: () => void;
+  onOpenUsers: () => void;
 }) {
+  const topUsers = summary?.top_users ?? [];
+  const topVendors = summary?.top_vendors ?? [];
+  const attentionInvoices = summary?.attention_invoices ?? [];
+  const failedInvoices = summary?.failed_invoices ?? [];
+  const duplicateHeavyUsers = summary?.duplicate_heavy_users ?? [];
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -635,46 +644,69 @@ function OverviewTab({
           value={summary?.attention ?? 0}
           accent="var(--color-rejected)"
         />
+        <StatCard
+          icon={Clock3}
+          label="Attention rate"
+          value={summary?.attention_rate ?? 0}
+          format={(value) => value.toFixed(1)}
+          suffix="%"
+          accent="var(--color-review)"
+        />
+        <StatCard
+          icon={AlertTriangle}
+          label="Failed extraction rate"
+          value={summary?.failed_extraction_rate ?? 0}
+          format={(value) => value.toFixed(1)}
+          suffix="%"
+          accent="var(--color-rejected)"
+        />
+        <StatCard
+          icon={FileText}
+          label="Duplicate upload rate"
+          value={summary?.duplicate_upload_rate ?? 0}
+          format={(value) => value.toFixed(1)}
+          suffix="%"
+          accent="var(--color-cyan)"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
         <div className="glass grain overflow-hidden rounded-2xl xl:col-span-2">
           <div className="flex items-center justify-between border-b border-line p-4">
             <div>
-              <h3 className="text-sm font-semibold tracking-tight text-ink">Recent users</h3>
-              <p className="mt-0.5 text-xs text-ink-mute">Newest accounts and access state.</p>
+              <h3 className="text-sm font-semibold tracking-tight text-ink">Top users by volume</h3>
+              <p className="mt-0.5 text-xs text-ink-mute">
+                The accounts generating the most invoices and review load.
+              </p>
             </div>
-            <Button variant="secondary" size="sm" onClick={onOpenUser}>
-              View all <ArrowRight className="h-4 w-4" />
+            <Button variant="secondary" size="sm" onClick={onOpenUsers}>
+              View users <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
           <div className="divide-y divide-line">
-            {recentUsers.length === 0 ? (
-              <div className="px-4 py-10 text-center text-sm text-ink-mute">No users found.</div>
+            {topUsers.length === 0 ? (
+              <div className="px-4 py-10 text-center text-sm text-ink-mute">No invoice activity yet.</div>
             ) : (
-              recentUsers.map((user) => (
+              topUsers.map((user) => (
                 <div key={user.id} className="flex flex-col gap-2 px-4 py-3.5 sm:flex-row sm:items-center">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <div className="truncate text-sm font-medium text-ink">{user.email ?? "Unknown user"}</div>
-                      {user.is_admin && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-approved/12 px-2 py-0.5 text-[0.68rem] font-medium text-approved">
-                          <BadgeCheck className="h-3 w-3" /> Admin
-                        </span>
-                      )}
-                      {user.is_bootstrap_admin && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-[0.68rem] font-medium text-brand">
-                          Locked
+                      <div className="truncate text-sm font-medium text-ink">{user.label}</div>
+                      {user.review_load_count > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-review/12 px-2 py-0.5 text-[0.68rem] font-medium text-review">
+                          <AlertTriangle className="h-3 w-3" /> {user.review_load_count} review-load
                         </span>
                       )}
                     </div>
                     <div className="mt-0.5 text-xs text-ink-mute">
-                      {user.name ?? "No profile name"} · Signed up {relativeTime(user.created_at)}
+                      <span>{user.invoice_count} invoices</span>
+                      <span>{user.attention_count} attention</span>
+                      <span>{user.duplicate_count} duplicates</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-ink-mute">
-                    <span className="tnum font-mono text-ink">{user.invoice_count} invoices</span>
                     <span className="tnum font-mono text-ink">{formatCurrency(user.total_value)}</span>
+                    <span>{relativeTime(user.last_activity_at)}</span>
                   </div>
                 </div>
               ))
@@ -719,6 +751,155 @@ function OverviewTab({
                 </button>
               ))
             )}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="glass grain overflow-hidden rounded-2xl">
+            <div className="border-b border-line p-4">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-brand-bright" />
+                <h3 className="text-sm font-semibold tracking-tight text-ink">Operational signals</h3>
+              </div>
+              <p className="mt-0.5 text-xs text-ink-mute">
+                Current concentration, review load, and duplicate pressure.
+              </p>
+            </div>
+            <div className="space-y-4 p-4">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-xl border border-line bg-surface px-2 py-3">
+                  <div className="text-[0.65rem] uppercase tracking-wider text-ink-faint">Attention</div>
+                  <div className="mt-1 text-sm font-semibold text-ink">{formatPercent(summary?.attention_rate)}</div>
+                </div>
+                <div className="rounded-xl border border-line bg-surface px-2 py-3">
+                  <div className="text-[0.65rem] uppercase tracking-wider text-ink-faint">Failed</div>
+                  <div className="mt-1 text-sm font-semibold text-ink">
+                    {formatPercent(summary?.failed_extraction_rate)}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-line bg-surface px-2 py-3">
+                  <div className="text-[0.65rem] uppercase tracking-wider text-ink-faint">Duplicates</div>
+                  <div className="mt-1 text-sm font-semibold text-ink">
+                    {formatPercent(summary?.duplicate_upload_rate)}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 text-[0.68rem] font-medium uppercase tracking-wider text-ink-faint">
+                  Top vendors
+                </div>
+                <div className="space-y-2">
+                  {topVendors.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-line px-3 py-5 text-center text-xs text-ink-mute">
+                      Top vendors will appear once invoices are loaded.
+                    </div>
+                  ) : (
+                    topVendors.slice(0, 4).map((vendor, index) => (
+                      <div key={vendor.id} className="rounded-xl border border-line bg-surface px-3 py-2.5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-ink">{vendor.label}</div>
+                            <div className="mt-0.5 text-xs text-ink-mute">
+                              {vendor.invoice_count} invoice{vendor.invoice_count === 1 ? "" : "s"} ·{" "}
+                              {vendor.review_load_count} review load
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="tnum font-mono text-sm font-semibold text-ink">
+                              {formatCurrency(vendor.total_value)}
+                            </div>
+                            <div className="text-[0.68rem] text-ink-faint">#{index + 1}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="rounded-xl border border-line bg-surface px-3 py-2.5">
+                  <div className="text-[0.68rem] font-medium uppercase tracking-wider text-ink-faint">
+                    Review load users
+                  </div>
+                  <div className="mt-2 space-y-2">
+                    {topUsers.length === 0 ? (
+                      <p className="text-xs text-ink-mute">No review load signal yet.</p>
+                    ) : (
+                      topUsers.slice(0, 3).map((item) => (
+                        <div key={item.id} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="truncate text-ink">{item.label}</span>
+                          <span className="tnum font-mono text-ink">{item.review_load_count}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-line bg-surface px-3 py-2.5">
+                  <div className="text-[0.68rem] font-medium uppercase tracking-wider text-ink-faint">
+                    Duplicate-heavy users
+                  </div>
+                  <div className="mt-2 space-y-2">
+                    {duplicateHeavyUsers.length === 0 ? (
+                      <p className="text-xs text-ink-mute">No duplicate-heavy users yet.</p>
+                    ) : (
+                      duplicateHeavyUsers.slice(0, 3).map((item) => (
+                        <div key={item.id} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="truncate text-ink">{item.label}</span>
+                          <span className="tnum font-mono text-ink">{item.duplicate_count}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass grain overflow-hidden rounded-2xl">
+            <div className="border-b border-line p-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-review" />
+                <h3 className="text-sm font-semibold tracking-tight text-ink">Triage queue</h3>
+              </div>
+              <p className="mt-0.5 text-xs text-ink-mute">
+                Invoices that need the most attention right now.
+              </p>
+            </div>
+            <div className="divide-y divide-line">
+              {[...attentionInvoices.slice(0, 3), ...failedInvoices.slice(0, 3)].length === 0 ? (
+                <div className="px-4 py-8 text-center text-xs text-ink-mute">
+                  No urgent invoices in the queue.
+                </div>
+              ) : (
+                [...attentionInvoices.slice(0, 3), ...failedInvoices.slice(0, 3)].map((invoice) => (
+                  <button
+                    key={invoice.id}
+                    onClick={() => onOpenInvoice(invoice.id)}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-black/[0.025]"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-surface-2 text-ink-mute">
+                      <FileText className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-ink">
+                        {invoice.vendor_name ?? invoice.filename}
+                      </div>
+                      <div className="truncate text-xs text-ink-mute">
+                        {invoice.user_email ?? "Unknown user"} · {relativeTime(invoice.uploaded_at)}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <StatusPill status={invoice.status as InvoiceStatus} />
+                      <span className="tnum font-mono text-sm text-ink">
+                        {formatCurrency(invoice.total_amount)}
+                      </span>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -879,6 +1060,7 @@ function UsersTab({
 }
 
 function InvoicesTab({
+  summary,
   search,
   onSearchChange,
   status,
@@ -889,6 +1071,7 @@ function InvoicesTab({
   onPrevPage,
   onOpenInvoice,
 }: {
+  summary: AdminSummary | null;
   search: string;
   onSearchChange: (value: string) => void;
   status: string;
@@ -918,6 +1101,29 @@ function InvoicesTab({
                 placeholder="Search invoice, vendor, or email"
                 className="focus-ring h-9 w-full rounded-lg border border-line bg-surface pl-9 pr-3 text-sm text-ink placeholder:text-ink-faint focus:border-brand/40 sm:w-80"
               />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="rounded-xl border border-line bg-surface px-3 py-2.5">
+            <div className="text-[0.68rem] font-medium uppercase tracking-wider text-ink-faint">
+              Attention queue
+            </div>
+            <div className="mt-1 text-sm font-semibold text-ink">{summary?.attention ?? 0}</div>
+          </div>
+          <div className="rounded-xl border border-line bg-surface px-3 py-2.5">
+            <div className="text-[0.68rem] font-medium uppercase tracking-wider text-ink-faint">
+              Failed extractions
+            </div>
+            <div className="mt-1 text-sm font-semibold text-ink">{summary?.failed ?? 0}</div>
+          </div>
+          <div className="rounded-xl border border-line bg-surface px-3 py-2.5">
+            <div className="text-[0.68rem] font-medium uppercase tracking-wider text-ink-faint">
+              Duplicate uploads
+            </div>
+            <div className="mt-1 text-sm font-semibold text-ink">
+              {summary?.duplicate_upload_rate ?? 0}%
             </div>
           </div>
         </div>

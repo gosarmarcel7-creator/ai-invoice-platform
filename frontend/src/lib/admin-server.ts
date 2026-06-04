@@ -1,6 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { getSupabaseAdmin, getUserFromRequest } from "@/lib/supabase-admin";
 import type {
+  AdminActivityRow,
   AdminInvoiceRow,
   AdminSummary,
   AdminUserRow,
@@ -34,6 +35,23 @@ type AdminRow = {
   granted_at: string | null;
   granted_by: string | null;
   note: string | null;
+};
+
+type PersonLike = {
+  email?: string | null;
+  name?: string | null;
+  user_metadata?: Record<string, unknown> | undefined;
+};
+
+type ActivityStats = {
+  invoice_count: number;
+  review_count: number;
+  attention_count: number;
+  failed_count: number;
+  duplicate_count: number;
+  review_load_count: number;
+  total_value: number;
+  last_activity_at: string | null;
 };
 
 const bootstrapEmails = new Set(
@@ -126,8 +144,9 @@ export async function fetchInvoiceStats(supabaseAdmin: SupabaseClient) {
   return (data ?? []) as InvoiceStatRow[];
 }
 
-function userName(user: User | null | undefined) {
+function userName(user: PersonLike | null | undefined) {
   if (!user) return null;
+  if (typeof user.name === "string" && user.name.trim()) return user.name;
   const meta = user.user_metadata as Record<string, unknown> | undefined;
   return (
     (typeof meta?.full_name === "string" && meta.full_name) ||
@@ -138,6 +157,143 @@ function userName(user: User | null | undefined) {
 
 function isAdminId(userId: string, adminIds: Set<string>) {
   return adminIds.has(userId);
+}
+
+function buildActivityStats(): ActivityStats {
+  return {
+    invoice_count: 0,
+    review_count: 0,
+    attention_count: 0,
+    failed_count: 0,
+    duplicate_count: 0,
+    review_load_count: 0,
+    total_value: 0,
+    last_activity_at: null,
+  };
+}
+
+function attentionReasonList(row: InvoiceStatRow): NonNullable<AdminInvoiceRow["attention_reasons"]> {
+  return Array.isArray(row.attention_reasons)
+    ? (row.attention_reasons as NonNullable<AdminInvoiceRow["attention_reasons"]>)
+    : [];
+}
+
+function hasDuplicateUpload(row: InvoiceStatRow) {
+  const attentionReasons = attentionReasonList(row) ?? [];
+  return row.duplicate_of_invoice_id != null || attentionReasons.includes("duplicate_upload");
+}
+
+function activityLabel(user: PersonLike | null | undefined) {
+  if (!user) return null;
+  return user.email ?? userName(user) ?? null;
+}
+
+function vendorLabel(invoice: InvoiceStatRow) {
+  return invoice.vendor_name?.trim() || invoice.filename?.trim() || "Unknown vendor";
+}
+
+function addActivityRow(
+  statsByKey: Map<string, ActivityStats>,
+  key: string,
+  updater: (stats: ActivityStats) => void
+) {
+  const stats = statsByKey.get(key) ?? buildActivityStats();
+  updater(stats);
+  statsByKey.set(key, stats);
+  return stats;
+}
+
+function toActivityRow(
+  id: string,
+  label: string,
+  stats: ActivityStats
+): AdminActivityRow {
+  return {
+    id,
+    label,
+    invoice_count: stats.invoice_count,
+    review_count: stats.review_count,
+    attention_count: stats.attention_count,
+    failed_count: stats.failed_count,
+    duplicate_count: stats.duplicate_count,
+    review_load_count: stats.review_load_count,
+    total_value: Math.round(stats.total_value * 100) / 100,
+    last_activity_at: stats.last_activity_at,
+  };
+}
+
+function sortByVolume(left: AdminActivityRow, right: AdminActivityRow) {
+  const countDiff = right.invoice_count - left.invoice_count;
+  if (countDiff !== 0) return countDiff;
+  const loadDiff = right.review_load_count - left.review_load_count;
+  if (loadDiff !== 0) return loadDiff;
+  return right.total_value - left.total_value;
+}
+
+function sortByReviewLoad(left: AdminActivityRow, right: AdminActivityRow) {
+  const loadDiff = right.review_load_count - left.review_load_count;
+  if (loadDiff !== 0) return loadDiff;
+  const duplicateDiff = right.duplicate_count - left.duplicate_count;
+  if (duplicateDiff !== 0) return duplicateDiff;
+  return right.invoice_count - left.invoice_count;
+}
+
+function sortByDuplicates(left: AdminActivityRow, right: AdminActivityRow) {
+  const duplicateDiff = right.duplicate_count - left.duplicate_count;
+  if (duplicateDiff !== 0) return duplicateDiff;
+  const loadDiff = right.review_load_count - left.review_load_count;
+  if (loadDiff !== 0) return loadDiff;
+  return right.invoice_count - left.invoice_count;
+}
+
+function sortByUrgency(left: AdminInvoiceRow, right: AdminInvoiceRow) {
+  const leftScore =
+    (left.status === "failed" ? 3 : 0) + (left.needs_attention ? 2 : 0) + (left.duplicate_of_invoice_id != null ? 1 : 0);
+  const rightScore =
+    (right.status === "failed" ? 3 : 0) + (right.needs_attention ? 2 : 0) + (right.duplicate_of_invoice_id != null ? 1 : 0);
+  if (rightScore !== leftScore) return rightScore - leftScore;
+
+  const leftConfidence = left.confidence_score ?? Number.POSITIVE_INFINITY;
+  const rightConfidence = right.confidence_score ?? Number.POSITIVE_INFINITY;
+  if (leftConfidence !== rightConfidence) return leftConfidence - rightConfidence;
+
+  const leftStamp = left.uploaded_at ? new Date(left.uploaded_at).getTime() : 0;
+  const rightStamp = right.uploaded_at ? new Date(right.uploaded_at).getTime() : 0;
+  return rightStamp - leftStamp;
+}
+
+function buildInvoiceRow(invoice: InvoiceStatRow, userMap: Map<string, PersonLike>): AdminInvoiceRow {
+  const owner = invoice.user_id ? userMap.get(invoice.user_id) : undefined;
+
+  return {
+    id: invoice.id,
+    user_id: invoice.user_id ?? undefined,
+    user_email: owner?.email ?? null,
+    user_name: userName(owner),
+    filename: invoice.filename ?? "",
+    raw_text: invoice.raw_text ?? null,
+    mime_type: invoice.mime_type ?? null,
+    file_size_bytes: invoice.file_size_bytes ?? null,
+    file_hash: null,
+    duplicate_of_invoice_id: invoice.duplicate_of_invoice_id ?? null,
+    vendor_name: invoice.vendor_name ?? null,
+    invoice_number: invoice.invoice_number ?? null,
+    total_amount: invoice.total_amount ?? null,
+    date: null,
+    due_date: null,
+    confidence_score: invoice.confidence_score ?? null,
+    needs_attention: invoice.needs_attention ?? false,
+    attention_reasons: attentionReasonList(invoice) as AdminInvoiceRow["attention_reasons"],
+    processing_started_at: null,
+    processed_at: invoice.processed_at ?? null,
+    last_error: invoice.last_error ?? null,
+    retry_count: invoice.retry_count ?? 0,
+    reviewed_by: invoice.reviewed_by ?? null,
+    reviewed_at: invoice.reviewed_at ?? null,
+    status: invoice.status as AdminInvoiceRow["status"],
+    uploaded_at: invoice.uploaded_at,
+    line_items: [],
+  };
 }
 
 export function buildUserRows(users: User[], adminRows: AdminRow[], invoices: InvoiceStatRow[]) {
@@ -228,41 +384,7 @@ export function buildInvoiceRows(invoices: InvoiceStatRow[], users: User[]) {
   const userMap = new Map(users.map((user) => [user.id, user]));
 
   return invoices
-    .map<AdminInvoiceRow>((invoice) => {
-      const owner = invoice.user_id ? userMap.get(invoice.user_id) : undefined;
-
-      return {
-        id: invoice.id,
-        user_id: invoice.user_id ?? undefined,
-        user_email: owner?.email ?? null,
-        user_name: userName(owner),
-        filename: invoice.filename ?? "",
-        raw_text: invoice.raw_text ?? null,
-        mime_type: invoice.mime_type ?? null,
-        file_size_bytes: invoice.file_size_bytes ?? null,
-        file_hash: null,
-        duplicate_of_invoice_id: invoice.duplicate_of_invoice_id ?? null,
-        vendor_name: invoice.vendor_name ?? null,
-        invoice_number: invoice.invoice_number ?? null,
-        total_amount: invoice.total_amount ?? null,
-        date: null,
-        due_date: null,
-        confidence_score: invoice.confidence_score ?? null,
-        needs_attention: invoice.needs_attention ?? false,
-        attention_reasons: Array.isArray(invoice.attention_reasons)
-          ? (invoice.attention_reasons as AdminInvoiceRow["attention_reasons"])
-          : [],
-        processing_started_at: null,
-        processed_at: invoice.processed_at ?? null,
-        last_error: invoice.last_error ?? null,
-        retry_count: invoice.retry_count ?? 0,
-        reviewed_by: invoice.reviewed_by ?? null,
-        reviewed_at: invoice.reviewed_at ?? null,
-        status: invoice.status as AdminInvoiceRow["status"],
-        uploaded_at: invoice.uploaded_at,
-        line_items: [],
-      };
-    })
+    .map((invoice) => buildInvoiceRow(invoice, userMap))
     .sort((left, right) => {
       const leftStamp = left.uploaded_at ? new Date(left.uploaded_at).getTime() : 0;
       const rightStamp = right.uploaded_at ? new Date(right.uploaded_at).getTime() : 0;
@@ -272,6 +394,10 @@ export function buildInvoiceRows(invoices: InvoiceStatRow[], users: User[]) {
 
 export function buildSummary(users: AdminUserRow[], invoices: InvoiceStatRow[]): AdminSummary {
   const userMap = new Map(users.map((user) => [user.id, user]));
+  const activityByUser = new Map<string, ActivityStats>();
+  const activityByVendor = new Map<string, ActivityStats>();
+  const vendorLabels = new Map<string, string>();
+  const invoiceRows = invoices.map((invoice) => buildInvoiceRow(invoice, userMap));
   let processing = 0;
   let awaitingReview = 0;
   let approved = 0;
@@ -281,14 +407,29 @@ export function buildSummary(users: AdminUserRow[], invoices: InvoiceStatRow[]):
   let confidenceSum = 0;
   let confidenceCount = 0;
   let attention = 0;
+  let duplicateUploads = 0;
+  const attentionInvoices: AdminInvoiceRow[] = [];
+  const failedInvoices: AdminInvoiceRow[] = [];
 
-  for (const invoice of invoices) {
+  for (let index = 0; index < invoices.length; index += 1) {
+    const invoice = invoices[index];
+    const row = invoiceRows[index];
+    const duplicate = hasDuplicateUpload(invoice);
+    const reviewLoad = invoice.status === "review" || invoice.needs_attention || invoice.status === "failed" || duplicate;
+    const vendorDisplay = vendorLabel(invoice);
+    const vendorKey = vendorDisplay.toLowerCase();
+
+    if (!vendorLabels.has(vendorKey)) {
+      vendorLabels.set(vendorKey, vendorDisplay);
+    }
+
     totalValue += Number(invoice.total_amount ?? 0);
     if (invoice.confidence_score != null) {
       confidenceSum += Number(invoice.confidence_score);
       confidenceCount += 1;
     }
     if (invoice.needs_attention) attention += 1;
+    if (duplicate) duplicateUploads += 1;
 
     switch (invoice.status) {
       case "processing":
@@ -309,16 +450,79 @@ export function buildSummary(users: AdminUserRow[], invoices: InvoiceStatRow[]):
       default:
         break;
     }
+
+    if (invoice.user_id) {
+      addActivityRow(activityByUser, invoice.user_id, (stats) => {
+        stats.invoice_count += 1;
+        stats.total_value += Number(invoice.total_amount ?? 0);
+        if (invoice.status === "review") stats.review_count += 1;
+        if (invoice.needs_attention) stats.attention_count += 1;
+        if (invoice.status === "failed") stats.failed_count += 1;
+        if (duplicate) stats.duplicate_count += 1;
+        if (reviewLoad) stats.review_load_count += 1;
+        if (invoice.uploaded_at && (!stats.last_activity_at || invoice.uploaded_at > stats.last_activity_at)) {
+          stats.last_activity_at = invoice.uploaded_at;
+        }
+      });
+    }
+
+    addActivityRow(activityByVendor, vendorKey, (stats) => {
+      stats.invoice_count += 1;
+      stats.total_value += Number(invoice.total_amount ?? 0);
+      if (invoice.status === "review") stats.review_count += 1;
+      if (invoice.needs_attention) stats.attention_count += 1;
+      if (invoice.status === "failed") stats.failed_count += 1;
+      if (duplicate) stats.duplicate_count += 1;
+      if (reviewLoad) stats.review_load_count += 1;
+      if (invoice.uploaded_at && (!stats.last_activity_at || invoice.uploaded_at > stats.last_activity_at)) {
+        stats.last_activity_at = invoice.uploaded_at;
+      }
+    });
+
+    if (row.status === "failed") failedInvoices.push(row);
+    if ((row.needs_attention || row.status === "review") && row.status !== "failed") attentionInvoices.push(row);
   }
 
   const recentUsers = [...users].slice(0, 5);
-  const recentInvoices = [...invoices]
-    .sort((left, right) => {
-      const leftStamp = left.uploaded_at ? new Date(left.uploaded_at).getTime() : 0;
-      const rightStamp = right.uploaded_at ? new Date(right.uploaded_at).getTime() : 0;
-      return rightStamp - leftStamp;
+  const recentInvoices = [...invoiceRows].sort((left, right) => {
+    const leftStamp = left.uploaded_at ? new Date(left.uploaded_at).getTime() : 0;
+    const rightStamp = right.uploaded_at ? new Date(right.uploaded_at).getTime() : 0;
+    return rightStamp - leftStamp;
+  }).slice(0, 5);
+
+  const topUsers = [...activityByUser.entries()]
+    .map(([id, stats]) => {
+      const user = userMap.get(id);
+      return toActivityRow(id, activityLabel(user) ?? id, stats);
     })
+    .sort(sortByVolume)
     .slice(0, 5);
+
+  const reviewLoadUsers = [...activityByUser.entries()]
+    .map(([id, stats]) => {
+      const user = userMap.get(id);
+      return toActivityRow(id, activityLabel(user) ?? id, stats);
+    })
+    .sort(sortByReviewLoad)
+    .slice(0, 5);
+
+  const duplicateHeavyUsers = [...activityByUser.entries()]
+    .map(([id, stats]) => {
+      const user = userMap.get(id);
+      return toActivityRow(id, activityLabel(user) ?? id, stats);
+    })
+    .filter((row) => row.duplicate_count > 0)
+    .sort(sortByDuplicates)
+    .slice(0, 5);
+
+  const topVendors = [...activityByVendor.entries()]
+    .map(([id, stats]) => toActivityRow(id, vendorLabels.get(id) ?? id, stats))
+    .sort(sortByVolume)
+    .slice(0, 5);
+
+  const attentionRate = invoices.length > 0 ? (attention / invoices.length) * 100 : 0;
+  const failedRate = invoices.length > 0 ? (failed / invoices.length) * 100 : 0;
+  const duplicateRate = invoices.length > 0 ? (duplicateUploads / invoices.length) * 100 : 0;
 
   return {
     total_users: users.length,
@@ -330,40 +534,19 @@ export function buildSummary(users: AdminUserRow[], invoices: InvoiceStatRow[]):
     rejected,
     failed,
     attention,
+    attention_rate: Math.round(attentionRate * 10) / 10,
+    failed_extraction_rate: Math.round(failedRate * 10) / 10,
+    duplicate_upload_rate: Math.round(duplicateRate * 10) / 10,
     total_value: Math.round(totalValue * 100) / 100,
     avg_confidence: confidenceCount > 0 ? Math.round((confidenceSum / confidenceCount) * 10) / 10 : 0,
     recent_users: recentUsers,
-    recent_invoices: recentInvoices.map((invoice) => ({
-      id: invoice.id,
-      user_id: invoice.user_id ?? undefined,
-      user_email: invoice.user_id ? userMap.get(invoice.user_id)?.email ?? null : null,
-      user_name: invoice.user_id ? userMap.get(invoice.user_id)?.name ?? null : null,
-      filename: invoice.filename ?? "",
-      raw_text: invoice.raw_text ?? null,
-      mime_type: invoice.mime_type ?? null,
-      file_size_bytes: invoice.file_size_bytes ?? null,
-      file_hash: null,
-      duplicate_of_invoice_id: invoice.duplicate_of_invoice_id ?? null,
-      vendor_name: invoice.vendor_name ?? null,
-      invoice_number: invoice.invoice_number ?? null,
-      total_amount: invoice.total_amount ?? null,
-      date: null,
-      due_date: null,
-      confidence_score: invoice.confidence_score ?? null,
-      needs_attention: invoice.needs_attention ?? false,
-      attention_reasons: Array.isArray(invoice.attention_reasons)
-        ? (invoice.attention_reasons as AdminInvoiceRow["attention_reasons"])
-        : [],
-      processing_started_at: null,
-      processed_at: invoice.processed_at ?? null,
-      last_error: invoice.last_error ?? null,
-      retry_count: invoice.retry_count ?? 0,
-      reviewed_by: invoice.reviewed_by ?? null,
-      reviewed_at: invoice.reviewed_at ?? null,
-      status: invoice.status as AdminInvoiceRow["status"],
-      uploaded_at: invoice.uploaded_at,
-      line_items: [],
-    })),
+    recent_invoices: recentInvoices,
+    top_users: topUsers,
+    review_load_users: reviewLoadUsers,
+    top_vendors: topVendors,
+    duplicate_heavy_users: duplicateHeavyUsers,
+    attention_invoices: attentionInvoices.sort(sortByUrgency).slice(0, 5),
+    failed_invoices: failedInvoices.sort(sortByUrgency).slice(0, 5),
   };
 }
 

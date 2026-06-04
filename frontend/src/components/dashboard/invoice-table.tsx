@@ -11,6 +11,7 @@ const filters: { key: string; label: string }[] = [
   { key: "all", label: "All" },
   { key: "processing", label: "Processing" },
   { key: "review", label: "Needs review" },
+  { key: "attention", label: "Attention queue" },
   { key: "approved", label: "Approved" },
   { key: "failed", label: "Failed" },
   { key: "rejected", label: "Rejected" },
@@ -215,6 +216,11 @@ export function InvoiceTable({
                               Attention needed
                             </div>
                           )}
+                          {inv.duplicate_of_invoice_id && (
+                            <div className="mt-1 inline-flex rounded-full bg-brand/12 px-2 py-0.5 text-[0.68rem] font-medium text-brand-bright">
+                              Duplicate invoice
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -243,9 +249,13 @@ export function InvoiceTable({
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-line bg-surface-2 text-ink-mute">
               <Inbox className="h-6 w-6" />
             </span>
-            <p className="mt-4 text-sm font-medium text-ink">No invoices found</p>
+            <p className="mt-4 text-sm font-medium text-ink">
+              {status === "attention" ? "No invoices need attention" : "No invoices found"}
+            </p>
             <p className="mt-1 text-xs text-ink-mute">
-              Try a different filter, or upload your first document.
+              {status === "attention"
+                ? "Try clearing the attention queue filter or search a wider set."
+                : "Try a different filter, or upload your first document."}
             </p>
           </div>
         )}

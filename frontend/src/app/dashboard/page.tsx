@@ -6,16 +6,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   AlertTriangle,
+  Building2,
+  ChevronRight,
   Clock4,
+  Database,
   DollarSign,
   FileText,
   Gauge,
-  OctagonX,
-  ChevronRight,
-  Database,
-  Mail,
-  ShieldCheck,
   LogOut,
+  Mail,
+  OctagonX,
+  ShieldCheck,
 } from "lucide-react";
 import { Shell } from "@/components/dashboard/shell";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -39,11 +40,151 @@ import type {
 } from "@/lib/types";
 import { formatCurrency, relativeTime } from "@/lib/utils";
 
+const DASHBOARD_VIEW_STORAGE_KEY = "invoice-dashboard-view-v1";
+const ATTENTION_QUEUE_STATUS = "attention";
+const INVOICE_LOAD_LIMIT = 100;
+const ALLOWED_VIEW_TABS = new Set(["overview", "invoices", "analytics", "settings"]);
+const ALLOWED_VIEW_STATUSES = new Set([
+  "all",
+  "processing",
+  "review",
+  ATTENTION_QUEUE_STATUS,
+  "approved",
+  "failed",
+  "rejected",
+]);
+
+type DashboardViewState = {
+  active: string;
+  status: string;
+  search: string;
+};
+
+type VendorInsight = {
+  name: string;
+  count: number;
+  totalValue: number;
+};
+
+function normalizeVendorName(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : "Unknown vendor";
+}
+
+function isAttentionInvoice(invoice: Invoice) {
+  return Boolean(
+    invoice.needs_attention || invoice.status === "failed" || invoice.duplicate_of_invoice_id
+  );
+}
+
+function buildVendorInsights(invoices: Invoice[]) {
+  const vendorMap = new Map<string, VendorInsight>();
+
+  for (const invoice of invoices) {
+    const name = normalizeVendorName(invoice.vendor_name);
+    const key = name.toLowerCase();
+    const current = vendorMap.get(key) ?? { name, count: 0, totalValue: 0 };
+    current.count += 1;
+    current.totalValue += Number(invoice.total_amount ?? 0);
+    if (current.name === "Unknown vendor" && invoice.vendor_name?.trim()) {
+      current.name = invoice.vendor_name.trim();
+    }
+    vendorMap.set(key, current);
+  }
+
+  const sorted = [...vendorMap.values()].sort(
+    (left, right) =>
+      right.count - left.count ||
+      right.totalValue - left.totalValue ||
+      left.name.localeCompare(right.name)
+  );
+
+  return {
+    topVendors: sorted.slice(0, 3),
+    recurringVendors: sorted.filter((vendor) => vendor.count > 1),
+  };
+}
+
+function escapeCsv(value: string | number | null | undefined) {
+  if (value == null) return "";
+  return `"${String(value).replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
+}
+
+function buildInvoiceCsv(invoices: Invoice[]) {
+  const rows = [
+    [
+      "id",
+      "vendor_name",
+      "invoice_number",
+      "total_amount",
+      "status",
+      "needs_attention",
+      "duplicate_of_invoice_id",
+      "filename",
+      "uploaded_at",
+    ],
+    ...invoices.map((invoice) => [
+      invoice.id,
+      invoice.vendor_name ?? "",
+      invoice.invoice_number ?? "",
+      invoice.total_amount ?? "",
+      invoice.status,
+      invoice.needs_attention ? "yes" : "no",
+      invoice.duplicate_of_invoice_id ?? "",
+      invoice.filename,
+      invoice.uploaded_at ?? "",
+    ]),
+  ];
+
+  return rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+}
+
+function readSavedDashboardView() {
+  if (typeof window === "undefined") {
+    return {
+      active: "overview",
+      status: "all",
+      search: "",
+    };
+  }
+
+  try {
+    const stored = window.localStorage.getItem(DASHBOARD_VIEW_STORAGE_KEY);
+    if (!stored) {
+      return {
+        active: "overview",
+        status: "all",
+        search: "",
+      };
+    }
+
+    const parsed = JSON.parse(stored) as Partial<DashboardViewState>;
+    return {
+      active:
+        typeof parsed.active === "string" && ALLOWED_VIEW_TABS.has(parsed.active)
+          ? parsed.active
+          : "overview",
+      status:
+        typeof parsed.status === "string" && ALLOWED_VIEW_STATUSES.has(parsed.status)
+          ? parsed.status
+          : "all",
+      search: typeof parsed.search === "string" ? parsed.search : "",
+    };
+  } catch {
+    return {
+      active: "overview",
+      status: "all",
+      search: "",
+    };
+  }
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [active, setActive] = useState("overview");
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [series, setSeries] = useState<TimeSeries | null>(null);
@@ -64,6 +205,26 @@ export default function DashboardPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const saved = readSavedDashboardView();
+    const timer = window.setTimeout(() => {
+      setActive(saved.active);
+      setStatus(saved.status);
+      setSearch(saved.search);
+      setPrefsLoaded(true);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!prefsLoaded || typeof window === "undefined") return;
+    const state: DashboardViewState = { active, status, search };
+    window.localStorage.setItem(DASHBOARD_VIEW_STORAGE_KEY, JSON.stringify(state));
+  }, [active, search, status, prefsLoaded]);
+
   const refreshAnalytics = useCallback(async () => {
     try {
       const [a, s] = await Promise.all([api.analytics(), api.timeseries()]);
@@ -78,8 +239,17 @@ export default function DashboardPage() {
     if (!isSupabaseConfigured) return;
     setLoadingTable(true);
     try {
-      const res = await api.listInvoices({ status, search, limit: 50 });
-      setInvoices(res.items);
+      const backendStatus = status === ATTENTION_QUEUE_STATUS ? "all" : status;
+      const res = await api.listInvoices({
+        status: backendStatus,
+        search,
+        limit: INVOICE_LOAD_LIMIT,
+      });
+      const items =
+        status === ATTENTION_QUEUE_STATUS
+          ? res.items.filter((invoice) => isAttentionInvoice(invoice))
+          : res.items;
+      setInvoices(items);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load invoices");
       setInvoices([]);
@@ -88,7 +258,7 @@ export default function DashboardPage() {
     }
   }, [search, status]);
 
-  // Auth gate + initial data load
+  // Auth gate + initial analytics load
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -114,10 +284,10 @@ export default function DashboardPage() {
   }, [router, refreshAnalytics]);
 
   useEffect(() => {
-    if (!authed) return;
+    if (!authed || !prefsLoaded) return;
     const timeout = setTimeout(loadInvoices, search ? 250 : 0);
     return () => clearTimeout(timeout);
-  }, [authed, loadInvoices, search]);
+  }, [authed, loadInvoices, prefsLoaded, search]);
 
   // Audit history when a drawer opens
   useEffect(() => {
@@ -153,6 +323,7 @@ export default function DashboardPage() {
 
   const allVisibleIds = useMemo(() => invoices.map((invoice) => invoice.id), [invoices]);
   const recentInvoices = useMemo(() => invoices.slice(0, 5), [invoices]);
+  const vendorInsights = useMemo(() => buildVendorInsights(invoices), [invoices]);
 
   async function handleUpload(files: FileList) {
     setBusyUpload(true);
@@ -162,7 +333,7 @@ export default function DashboardPage() {
         await api.uploadInvoice(file);
       }
       toast.success(`${names.length} file${names.length > 1 ? "s" : ""} uploaded`, {
-        description: "AI extraction is running…",
+        description: "AI extraction is running...",
       });
       await Promise.all([loadInvoices(), refreshAnalytics()]);
     } catch (error) {
@@ -177,8 +348,8 @@ export default function DashboardPage() {
     setSaving(true);
     try {
       const updated = await api.updateInvoice(selected.id, patch);
-      setInvoices((prev) => prev.map((invoice) => (invoice.id === updated.id ? updated : invoice)));
       setSelected(updated);
+      await loadInvoices();
       toast.success("Changes saved");
       await refreshAnalytics();
     } catch (error) {
@@ -192,9 +363,9 @@ export default function DashboardPage() {
     if (!selected) return;
     try {
       const updated = await api.updateInvoice(selected.id, { status: next });
-      setInvoices((prev) => prev.map((invoice) => (invoice.id === updated.id ? updated : invoice)));
       setSelected(updated);
       toast.success(next === "approved" ? "Invoice approved" : "Invoice rejected");
+      await loadInvoices();
       await refreshAnalytics();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Status update failed");
@@ -207,8 +378,8 @@ export default function DashboardPage() {
     try {
       await api.retryInvoice(selected.id);
       const refreshed = await api.getInvoice(selected.id);
-      setInvoices((prev) => prev.map((invoice) => (invoice.id === refreshed.id ? refreshed : invoice)));
       setSelected(refreshed);
+      await loadInvoices();
       toast.success("Re-extraction queued");
       await refreshAnalytics();
     } catch (error) {
@@ -223,9 +394,9 @@ export default function DashboardPage() {
     const currentId = selected.id;
     try {
       await api.deleteInvoice(currentId);
-      setInvoices((prev) => prev.filter((invoice) => invoice.id !== currentId));
       setSelected(null);
       setSelectedIds((prev) => prev.filter((id) => id !== currentId));
+      await loadInvoices();
       toast.success("Invoice deleted");
       await refreshAnalytics();
     } catch (error) {
@@ -238,14 +409,12 @@ export default function DashboardPage() {
     setBulkBusy(next);
     try {
       const result = await api.bulkUpdateInvoices(selectedIds, next);
-      setInvoices((prev) =>
-        prev.map((invoice) => result.updated.find((updated) => updated.id === invoice.id) ?? invoice)
-      );
       if (selected && selectedIds.includes(selected.id)) {
         setSelected((prev) => (prev ? { ...prev, status: next } : prev));
       }
       toast.success(`Updated ${result.count} invoice${result.count > 1 ? "s" : ""}`);
       setSelectedIds([]);
+      await loadInvoices();
       await refreshAnalytics();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Bulk update failed");
@@ -257,7 +426,10 @@ export default function DashboardPage() {
   async function handleExport() {
     setExporting(true);
     try {
-      const csv = await api.exportInvoices({ status, search });
+      const csv =
+        status === ATTENTION_QUEUE_STATUS
+          ? buildInvoiceCsv(invoices)
+          : await api.exportInvoices({ status, search });
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -301,7 +473,7 @@ export default function DashboardPage() {
       <div className="flex min-h-dvh items-center justify-center bg-base">
         <div className="flex flex-col items-center gap-4">
           <LogoMark className="h-10 w-10 animate-pulse" />
-          <p className="text-sm text-ink-mute">Loading your workspace…</p>
+          <p className="text-sm text-ink-mute">Loading your workspace...</p>
         </div>
       </div>
     );
@@ -357,6 +529,7 @@ export default function DashboardPage() {
               <OverviewTab
                 analytics={analytics}
                 invoices={recentInvoices}
+                vendorInsights={vendorInsights}
                 loading={loadingTable}
                 busyUpload={busyUpload}
                 onUpload={handleUpload}
@@ -387,9 +560,7 @@ export default function DashboardPage() {
 
             {active === "analytics" && <AnalyticsTab analytics={analytics} series={series} />}
 
-            {active === "settings" && (
-              <SettingsTab email={email} onSignOut={signOut} />
-            )}
+            {active === "settings" && <SettingsTab email={email} onSignOut={signOut} />}
           </motion.div>
         </AnimatePresence>
       </Shell>
@@ -413,6 +584,7 @@ export default function DashboardPage() {
 function OverviewTab({
   analytics,
   invoices,
+  vendorInsights,
   loading,
   busyUpload,
   onUpload,
@@ -421,6 +593,10 @@ function OverviewTab({
 }: {
   analytics: Analytics | null;
   invoices: Invoice[];
+  vendorInsights: {
+    topVendors: VendorInsight[];
+    recurringVendors: VendorInsight[];
+  };
   loading: boolean;
   busyUpload: boolean;
   onUpload: (files: FileList) => void;
@@ -480,9 +656,109 @@ function OverviewTab({
             onSeeAll={onSeeAll}
           />
         </div>
-        <Reveal>
-          <UploadZone onUpload={onUpload} busy={busyUpload} />
-        </Reveal>
+        <div className="space-y-3">
+          <Reveal>
+            <UploadZone onUpload={onUpload} busy={busyUpload} />
+          </Reveal>
+          <VendorIntelligencePanel
+            topVendors={vendorInsights.topVendors}
+            recurringVendors={vendorInsights.recurringVendors}
+            loading={loading}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VendorIntelligencePanel({
+  topVendors,
+  recurringVendors,
+  loading,
+}: {
+  topVendors: VendorInsight[];
+  recurringVendors: VendorInsight[];
+  loading: boolean;
+}) {
+  return (
+    <div className="glass grain overflow-hidden rounded-2xl">
+      <div className="border-b border-line p-4">
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-brand-bright" />
+          <h3 className="text-sm font-semibold tracking-tight text-ink">Vendor intelligence</h3>
+        </div>
+        <p className="mt-0.5 text-xs text-ink-mute">
+          Derived from the current invoice list, so it follows your saved view.
+        </p>
+      </div>
+
+      <div className="space-y-3 p-4">
+        <div>
+          <div className="mb-2 text-[0.68rem] font-medium uppercase tracking-wider text-ink-faint">
+            Top vendors by count and value
+          </div>
+          <div className="space-y-2">
+            {loading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="h-16 animate-pulse rounded-xl bg-black/[0.05]" />
+              ))
+            ) : topVendors.length > 0 ? (
+              topVendors.map((vendor, index) => (
+                <div
+                  key={`${vendor.name}-${index}`}
+                  className="rounded-xl border border-line bg-surface px-3 py-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-ink">{vendor.name}</div>
+                      <div className="mt-0.5 text-xs text-ink-mute">
+                        {vendor.count} invoice{vendor.count === 1 ? "" : "s"}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="tnum font-mono text-sm font-semibold text-ink">
+                        {formatCurrency(vendor.totalValue)}
+                      </div>
+                      <div className="text-[0.68rem] text-ink-faint"># {index + 1}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-xl border border-dashed border-line px-3 py-5 text-center text-xs text-ink-mute">
+                Upload invoices to build vendor intelligence.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 text-[0.68rem] font-medium uppercase tracking-wider text-ink-faint">
+            Recurring vendors
+          </div>
+          {loading ? (
+            <div className="h-24 animate-pulse rounded-xl bg-black/[0.05]" />
+          ) : recurringVendors.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {recurringVendors.map((vendor) => (
+                <span
+                  key={vendor.name}
+                  className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-ink"
+                >
+                  <span className="font-medium">{vendor.name}</span>
+                  <span className="rounded-full bg-brand/10 px-2 py-0.5 font-mono text-[0.65rem] text-brand-bright">
+                    {vendor.count}x
+                  </span>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-line bg-surface px-3 py-4 text-xs leading-relaxed text-ink-mute">
+              Same vendor names will show up here once they appear more than once in the current
+              list.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -524,7 +800,7 @@ function RecentActivity({
           ))
         ) : invoices.length === 0 ? (
           <div className="px-4 py-10 text-center text-sm text-ink-mute">
-            No documents yet — upload your first invoice to get started.
+            No documents yet - upload your first invoice to get started.
           </div>
         ) : (
           invoices.map((invoice) => (
