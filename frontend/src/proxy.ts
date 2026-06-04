@@ -36,6 +36,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/update-password") ||
     pathname.startsWith("/auth/confirm") ||
+    pathname.startsWith("/api/auth/password-reset") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon");
 
