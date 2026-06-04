@@ -15,6 +15,14 @@ function getRedirectTo(request: NextRequest) {
   return url.toString();
 }
 
+function getRecoveryLink(request: NextRequest, tokenHash: string, type: string) {
+  const url = new URL("/auth/confirm", request.url);
+  url.searchParams.set("token_hash", tokenHash);
+  url.searchParams.set("type", type);
+  url.searchParams.set("next", "/update-password");
+  return url.toString();
+}
+
 function isNotFoundError(message?: string | null) {
   return Boolean(message && /user not found|not found/i.test(message));
 }
@@ -55,13 +63,16 @@ export async function POST(request: NextRequest) {
   }
 
   const actionLink = data?.properties?.action_link;
-  if (!actionLink) {
+  const tokenHash = data?.properties?.hashed_token;
+  const verificationType = data?.properties?.verification_type ?? "recovery";
+
+  if (!actionLink || !tokenHash) {
     return NextResponse.json({ error: "Unable to generate reset link." }, { status: 502 });
   }
 
   const result = await sendMailjetPasswordResetEmail({
     to: { Email: email },
-    actionLink,
+    resetLink: getRecoveryLink(request, tokenHash, verificationType),
   });
 
   if (!result.ok) {

@@ -26,7 +26,7 @@ type MailjetResult = {
 
 type PasswordResetEmailContext = {
   to: MailjetRecipient;
-  actionLink: string;
+  resetLink: string;
 };
 
 type InvoiceEmailContext = {
@@ -358,14 +358,14 @@ export async function sendMailjetTestEmail({
 
 export async function sendMailjetPasswordResetEmail({
   to,
-  actionLink,
+  resetLink,
 }: PasswordResetEmailContext): Promise<MailjetResult> {
   const config = getMailjetConfig();
   if (!config) {
     return { ok: false, error: "Mailjet API credentials are not configured." };
   }
 
-  const resetLink = escapeHtml(actionLink);
+  const escapedResetLink = escapeHtml(resetLink);
 
   return sendMailjetEmail({
     to: [to],
@@ -374,7 +374,7 @@ export async function sendMailjetPasswordResetEmail({
       "You requested a password reset for your DocuExtract account.",
       "",
       "Use this link to set a new password:",
-      actionLink,
+      resetLink,
       "",
       "If you did not request this reset, you can ignore this email.",
     ].join("\n"),
@@ -383,13 +383,13 @@ export async function sendMailjetPasswordResetEmail({
         <h2 style="margin: 0 0 12px; font-size: 20px;">Reset your DocuExtract password</h2>
         <p style="margin: 0 0 12px;">You requested a password reset for your DocuExtract account.</p>
         <p style="margin: 0 0 18px;">
-          <a href="${resetLink}" style="display: inline-block; border-radius: 10px; background: #111827; color: #ffffff; padding: 12px 18px; text-decoration: none; font-weight: 600;">
+          <a href="${escapedResetLink}" style="display: inline-block; border-radius: 10px; background: #111827; color: #ffffff; padding: 12px 18px; text-decoration: none; font-weight: 600;">
             Set a new password
           </a>
         </p>
         <p style="margin: 0 0 12px; color: #475569; font-size: 14px; word-break: break-all;">
           Or paste this link into your browser:<br />
-          ${resetLink}
+          ${escapedResetLink}
         </p>
         <p style="margin: 0; color: #475569;">If you did not request this reset, you can ignore this email.</p>
       </div>
