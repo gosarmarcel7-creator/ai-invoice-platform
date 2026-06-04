@@ -316,7 +316,7 @@ export default function DashboardPage() {
             Connect Supabase to continue
           </h1>
           <p className="mt-2 text-sm text-ink-mute">
-            This workspace runs on live data only. Add your Supabase and Mistral keys to{" "}
+            This workspace runs on live data only. Add your Supabase and AI keys to{" "}
             <code className="font-mono text-ink">.env.local</code>, then sign in.
           </p>
         </div>
@@ -617,7 +617,7 @@ function SettingsTab({
           <li className="flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3">
             <div className="flex items-center gap-2.5">
               <Gauge className="h-4 w-4 text-ink-mute" />
-              <span className="text-sm text-ink">Mistral AI extraction</span>
+              <span className="text-sm text-ink">AI extraction</span>
             </div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-[0.7rem] font-medium text-ink-mute">
               Server-side

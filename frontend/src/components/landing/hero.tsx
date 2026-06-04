@@ -26,7 +26,7 @@ export function Hero() {
             <span className="inline-flex items-center gap-1 rounded-full bg-brand/20 px-2 py-0.5 text-[0.7rem] font-medium text-brand-bright">
               <Sparkles className="h-3 w-3" /> New
             </span>
-            Mistral-powered extraction, now live
+            AI-powered extraction, now live
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </motion.a>
 

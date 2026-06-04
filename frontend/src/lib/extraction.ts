@@ -22,7 +22,7 @@ Invoice Text:
 
 export async function extractInvoiceData(text: string): Promise<Record<string, unknown>> {
   if (!MISTRAL_API_KEY) {
-    throw new Error("Mistral is not configured.");
+    throw new Error("AI extraction is not configured.");
   }
   try {
     const client = new Mistral({ apiKey: MISTRAL_API_KEY });
@@ -37,7 +37,7 @@ export async function extractInvoiceData(text: string): Promise<Record<string, u
     }
     return JSON.parse(raw);
   } catch (e) {
-    console.error("Mistral extraction error:", e);
+    console.error("AI extraction error:", e);
     throw new Error("Invoice extraction failed.");
   }
 }

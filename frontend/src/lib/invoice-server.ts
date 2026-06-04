@@ -2,7 +2,7 @@ import { supabaseForUser, getUserFromRequest } from "@/lib/supabase-admin";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
 import { buildCsvRows, canRetryInvoice, validateExtractionResult } from "@/lib/invoice-workflow";
-import { extractInvoiceData } from "@/lib/mistral";
+import { extractInvoiceData } from "@/lib/extraction";
 
 type AuditAction =
   | "uploaded"
