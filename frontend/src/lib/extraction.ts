@@ -5,6 +5,10 @@ const MISTRAL_MODEL = process.env.MISTRAL_MODEL ?? "mistral-large-latest";
 const OCR_MODEL = "mistral-ocr-latest";
 
 const PROMPT = `You are an expert invoice data extractor. Extract all key information from the invoice text below.
+Treat the text as messy OCR output when necessary. Ignore watermarks, duplicate headers, and demo/sample labels.
+Prefer the supplier or seller as vendor_name, not the buyer.
+Use the grand total due as total_amount when present; do not invent values.
+If a field is missing or unclear, return null instead of guessing.
 Return ONLY a valid JSON object - no markdown, no code fences, no explanation - with this exact schema:
 {
   "vendor_name": "string or null",
@@ -48,7 +52,18 @@ function parseExtractionPayload(raw: string) {
   if (!payload) {
     throw new Error("AI extraction returned no content.");
   }
-  return JSON.parse(payload) as Record<string, unknown>;
+  try {
+    return JSON.parse(payload) as Record<string, unknown>;
+  } catch {
+    const firstBrace = payload.indexOf("{");
+    const lastBrace = payload.lastIndexOf("}");
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      const candidate = payload.slice(firstBrace, lastBrace + 1);
+      return JSON.parse(candidate) as Record<string, unknown>;
+    }
+
+    throw new Error("AI extraction returned invalid JSON.");
+  }
 }
 
 function requireMistralApiKey() {
@@ -84,7 +99,7 @@ export async function extractInvoiceData(text: string): Promise<Record<string, u
   const response = await client.chat.complete({
     model: MISTRAL_MODEL,
     messages: [{ role: "user", content: PROMPT + text }],
-    temperature: 0.1,
+    temperature: 0,
     responseFormat: { type: "json_object" },
   });
 

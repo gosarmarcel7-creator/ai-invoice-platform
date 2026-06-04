@@ -91,10 +91,24 @@ export function normalizeExtension(name: string) {
 }
 
 export function normalizeMimeType(type: string, extension: string | null) {
-  if (type) return type.toLowerCase();
-  if (extension === "pdf") return "application/pdf";
-  if (extension === "png") return "image/png";
-  if (extension === "jpg" || extension === "jpeg") return "image/jpeg";
+  const normalizedType = type?.toLowerCase().trim();
+  const inferredType =
+    extension === "pdf"
+      ? "application/pdf"
+      : extension === "png"
+        ? "image/png"
+        : extension === "jpg" || extension === "jpeg"
+          ? "image/jpeg"
+          : null;
+
+  if (normalizedType && SUPPORTED_MIME_TYPES.has(normalizedType)) {
+    return normalizedType;
+  }
+
+  if (!normalizedType || normalizedType === "application/octet-stream") {
+    return inferredType;
+  }
+
   return null;
 }
 

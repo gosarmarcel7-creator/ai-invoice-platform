@@ -44,6 +44,32 @@ describe("validateUpload", () => {
       normalizedExtension: "jpg",
     });
   });
+
+  it("infers the correct mime type when the browser omits or genericizes it", () => {
+    expect(
+      validateUpload({
+        name: "invoice.pdf",
+        type: "application/octet-stream",
+        size: 2048,
+      })
+    ).toEqual({
+      ok: true,
+      normalizedMimeType: "application/pdf",
+      normalizedExtension: "pdf",
+    });
+
+    expect(
+      validateUpload({
+        name: "invoice.png",
+        type: "",
+        size: 2048,
+      })
+    ).toEqual({
+      ok: true,
+      normalizedMimeType: "image/png",
+      normalizedExtension: "png",
+    });
+  });
 });
 
 describe("validateExtractionResult", () => {
